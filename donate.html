@@ -7,6 +7,32 @@
     <title>NimFresh - Donate Food</title>
     <link rel="stylesheet" href="dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Layout: ensure header filter is right-aligned like stock page */
+        .section-header { display:flex; align-items:center; gap:16px; }
+        .section-header .filter-tabs { margin-left: auto; display:flex; align-items:center; }
+
+        /* Compact dropdown filter styles (matching stock page visual language) */
+        .filter-dropdown { position: relative; display: inline-block; }
+        .filter-toggle { background: #f4fff6; border: 1px solid #d6edd6; padding: 8px 12px; border-radius: 22px; display: inline-flex; align-items: center; gap:10px; cursor: pointer; font-weight:700; color:#114b22 }
+        .filter-toggle i { color: #0b6b2f; font-size:1rem }
+        .filter-toggle .filter-toggle-label { font-size:0.95rem; color:#0b6b2f }
+        .filter-toggle .toggle-caret { color:#0b6b2f; margin-left:4px }
+        .filter-menu { position: absolute; top: calc(100% + 8px); right: 0; left: auto; background: white; border: 1px solid #e6e6e6; border-radius: 10px; box-shadow: 0 14px 40px rgba(0,0,0,0.10); padding: 8px; display: flex; flex-direction: column; gap:6px; min-width: 220px; z-index: 1000; }
+        .filter-menu[aria-hidden="true"] { display: none; }
+        .filter-option { background: transparent; border: none; text-align: left; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-weight:600; display:flex; align-items:center; justify-content:space-between; }
+        .filter-option:hover { background: #f6fbf6; }
+        .filter-option.active { background: #e9f6ea; color: #155724; }
+        .filter-option.active::after { content: '✓'; color: #2e7d32; font-weight:800; }
+
+        /* Responsive: stack header and make filter full-width on small screens */
+        @media (max-width: 600px) {
+            .section-header { flex-direction: column; align-items: flex-start; gap:10px; }
+            .section-header .filter-tabs { width:100%; margin-left:0; }
+            .filter-dropdown { width:100%; }
+            .filter-toggle { width:100%; justify-content:space-between; }
+        }
+    </style>
 </head>
 
 <body>
@@ -124,9 +150,18 @@
             <div class="section-header">
                 <h2>Food Available for Donation</h2>
                 <div class="filter-tabs">
-                    <button class="filter-btn active" data-filter="all">All Items</button>
-                    <button class="filter-btn" data-filter="expiring">Expiring Soon</button>
-                    <button class="filter-btn" data-filter="surplus">Surplus</button>
+                        <div class="filter-dropdown">
+                            <button id="donateFilterToggle" class="filter-toggle" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-filter"></i>
+                                <span class="filter-toggle-label">All Items</span>
+                                <i class="fas fa-caret-down toggle-caret"></i>
+                            </button>
+                            <div id="donateFilterMenu" class="filter-menu" role="menu" aria-hidden="true">
+                                <button class="filter-option" data-filter="all" role="menuitem">All Items</button>
+                                <button class="filter-option" data-filter="expiring" role="menuitem">Expiring Soon</button>
+                                <button class="filter-option" data-filter="surplus" role="menuitem">Surplus</button>
+                            </div>
+                        </div>
                 </div>
             </div>
 
@@ -314,6 +349,62 @@
                 });
             });
 
+            // Compact dropdown filter (mirrors stock page behaviour)
+            const donateFilterToggle = document.getElementById('donateFilterToggle');
+            const donateFilterMenu = document.getElementById('donateFilterMenu');
+            if (donateFilterToggle && donateFilterMenu) {
+                donateFilterMenu.setAttribute('aria-hidden', 'true');
+                donateFilterToggle.addEventListener('click', function(e) {
+                    const open = donateFilterMenu.getAttribute('aria-hidden') === 'true';
+                    donateFilterMenu.setAttribute('aria-hidden', String(!open));
+                    donateFilterToggle.setAttribute('aria-expanded', String(open));
+                });
+
+                const donateOptions = Array.from(donateFilterMenu.querySelectorAll('.filter-option'));
+                donateOptions.forEach(opt => {
+                    opt.addEventListener('click', function() {
+                        const f = this.getAttribute('data-filter');
+                        // Update toggle label
+                        const labelEl = donateFilterToggle.querySelector('.filter-toggle-label');
+                        if (labelEl) labelEl.textContent = this.textContent;
+
+                        // Mark selected option visually
+                        donateOptions.forEach(o => o.classList.remove('active'));
+                        this.classList.add('active');
+
+                        // Close menu
+                        donateFilterMenu.setAttribute('aria-hidden', 'true');
+                        donateFilterToggle.setAttribute('aria-expanded', 'false');
+
+                        // Sync legacy buttons if present
+                        const btn = document.querySelector(`.filter-btn[data-filter="${f}"]`);
+                        if (btn) { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
+
+                        // run filter
+                        filterDonationItems(f);
+                    });
+                });
+
+                // Initialize label to currently selected (default to All Items)
+                (function initDonateFilterLabel(){
+                    const current = donateFilterMenu.querySelector('.filter-option.active') || donateFilterMenu.querySelector('[data-filter="all"]');
+                    if (current) {
+                        const labelEl = donateFilterToggle.querySelector('.filter-toggle-label');
+                        if (labelEl) labelEl.textContent = current.textContent;
+                        donateOptions.forEach(o => o.classList.remove('active'));
+                        current.classList.add('active');
+                    }
+                })();
+
+                // Close menu on outside click
+                document.addEventListener('click', function(e) {
+                    if (!donateFilterToggle.contains(e.target) && !donateFilterMenu.contains(e.target)) {
+                        donateFilterMenu.setAttribute('aria-hidden', 'true');
+                        donateFilterToggle.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            }
+
             // Quick action buttons
             document.getElementById('donate-expiring').addEventListener('click', function(e) {
                 e.preventDefault();
@@ -329,21 +420,20 @@
                 document.querySelector('[data-filter="surplus"]').classList.add('active');
             });
 
-            document.getElementById('schedule-pickup').addEventListener('click', function(e) {
-                e.preventDefault();
-                alert('Schedule Pickup functionality will open a calendar to select pickup date and time.');
-            });
+            // schedule-pickup and donation-history handlers are wired later with improved modals
 
-            document.getElementById('donation-history').addEventListener('click', function(e) {
-                e.preventDefault();
-                alert('Donation History will show your past donations and impact.');
-            });
-
-            // Donate now buttons
+            // Donate now buttons: open basket and pre-select organization for scheduling
             document.querySelectorAll('.donate-now-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const orgName = this.closest('.organization-card').querySelector('h3').textContent;
-                    alert(`Starting donation process with ${orgName}. You will be able to select items to donate.`);
+                    try{
+                        // remember default organization for schedule modal
+                        window._nimfresh_schedule_default_org = orgName;
+                        // open basket so user can add items; user can then click Schedule Pickup
+                        openBasket();
+                        // give user a short non-blocking notice
+                        try{ if (typeof window.showNotification === 'function'){ window.showNotification(`Selected ${orgName}. Add items to basket and schedule pickup.`, 'info'); } else { console.log(`Selected ${orgName}`); } }catch(e){}
+                    }catch(e){ console.error(e); }
                 });
             });
         });
@@ -357,6 +447,7 @@
                 const donationItem = document.createElement('div');
                 donationItem.className = `food-item ${item.category}`;
                 donationItem.setAttribute('data-category', item.category);
+                donationItem.setAttribute('data-item-id', item.id);
 
                 donationItem.innerHTML = `
                     <div class="item-image">
@@ -378,11 +469,26 @@
                 container.appendChild(donationItem);
             });
 
-            // Add event listeners to donate buttons
+                // Add event listeners to donate buttons (add item to basket)
             document.querySelectorAll('.donate-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const itemName = this.getAttribute('data-item');
-                    alert(`Adding ${itemName} to your donation basket. You can select multiple items before finalizing your donation.`);
+                    const container = this.closest('.food-item');
+                    const iconEl = container.querySelector('.item-image i');
+                    const icon = iconEl ? iconEl.className : 'fas fa-cube';
+                    const qtyText = container.querySelector('.item-details p:nth-of-type(2)').textContent || '';
+                    const qty = (qtyText.match(/Quantity:\s*([^•]+)/)||[])[1] || '';
+                    const it = { id: container.getAttribute('data-item-id') || (Date.now()+Math.random()), name: itemName, icon, quantity: qty, status: container.querySelector('.item-status') ? container.querySelector('.item-status').textContent : '' };
+                    if (typeof window.addToDonationBasket === 'function') {
+                        window.addToDonationBasket(it);
+                    } else {
+                        // fallback: push to session storage directly
+                        try{
+                            const b = JSON.parse(sessionStorage.getItem('nimfresh-basket')||'[]');
+                            if (!b.find(x=>String(x.id)===String(it.id))){ b.push(it); sessionStorage.setItem('nimfresh-basket', JSON.stringify(b)); }
+                            try{ if (typeof window.showNotification === 'function') window.showNotification('Added to basket','success'); else console.log('Added to basket'); }catch(e){}
+                        }catch(e){ console.error(e); alert('Added to basket'); }
+                    }
                 });
             });
         }
@@ -399,6 +505,261 @@
                 }
             });
         }
+    </script>
+
+    <!-- Donation Basket Modal -->
+    <div id="donationBasketModal" class="df-modal" aria-hidden="true">
+        <div class="df-card">
+            <div class="df-header">
+                <h3>Your Donation Basket</h3>
+                <button id="basketClose" class="df-close">×</button>
+            </div>
+            <div class="df-body">
+                <div id="basketItems" style="display:flex;flex-direction:column;gap:10px"></div>
+                <div style="margin-top:12px;display:flex;gap:8px;align-items:center;justify-content:space-between">
+                    <div style="color:#666">Selected items will be donated to the organization you choose when scheduling pickup.</div>
+                    <div>
+                        <button id="basketClear" class="btn btn-secondary">Clear</button>
+                        <button id="basketSchedule" class="btn btn-primary">Schedule Pickup</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Pickup Modal -->
+    <div id="scheduleModal" class="df-modal" aria-hidden="true">
+        <div class="df-card">
+            <div class="df-header">
+                <h3>Schedule Pickup</h3>
+                <button id="scheduleClose" class="df-close">×</button>
+            </div>
+            <div class="df-body">
+                <label for="scheduleOrg">Choose Organization</label>
+                <select id="scheduleOrg" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;margin-top:6px"></select>
+
+                <div style="display:flex;gap:8px;margin-top:12px">
+                    <div style="flex:1">
+                        <label for="pickupDate">Pickup Date</label>
+                        <input id="pickupDate" type="date" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;margin-top:6px">
+                    </div>
+                    <div style="width:160px">
+                        <label for="pickupTime">Pickup Time</label>
+                        <input id="pickupTime" type="time" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;margin-top:6px">
+                    </div>
+                </div>
+
+                <div style="margin-top:12px;text-align:right">
+                    <button id="scheduleCancel" class="btn btn-secondary">Cancel</button>
+                    <button id="scheduleConfirm" class="btn btn-primary">Confirm Pickup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Donation History Modal -->
+    <div id="historyModal" class="df-modal" aria-hidden="true">
+        <div class="df-card">
+            <div class="df-header">
+                <h3>Donation History</h3>
+                <button id="historyClose" class="df-close">×</button>
+            </div>
+            <div class="df-body">
+                <div id="historyList" style="display:flex;flex-direction:column;gap:10px;max-height:360px;overflow:auto"></div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+            /* Donation modals */
+        .df-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:2800; align-items:center; justify-content:center; padding:16px; }
+        .df-modal[aria-hidden="false"] { display:flex; }
+        .df-card { width:100%; max-width:720px; background:white; border-radius:12px; box-shadow:0 18px 60px rgba(0,0,0,0.12); overflow:hidden; display:flex; flex-direction:column }
+        .df-header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:linear-gradient(90deg,#f7fff7,#eef6f0); }
+        .df-body { padding:12px 18px; overflow:auto; max-height:calc(90vh - 120px); }
+        /* prevent page scroll when modal open */
+        body.modal-open { overflow: hidden; }
+        .df-close { background:transparent;border:0;font-size:20px;cursor:pointer }
+
+        /* Button styles (consistent with other pages) */
+        .btn { padding:8px 12px; border-radius:8px; border:0; cursor:pointer; font-weight:700; font-size:0.95rem; }
+        .btn-primary { background:#2e7d32; color:#fff; border:1px solid rgba(0,0,0,0.06); box-shadow:0 6px 18px rgba(46,125,50,0.08); }
+        .btn-secondary { background:#ffffff; color:#333; border:1px solid #e6e6e6; }
+        .btn:focus { outline:2px solid rgba(46,125,50,0.12); }
+
+        /* Basket rows improved */
+        #basketItems .basket-row { display:flex;gap:12px;align-items:center;padding:14px;border-radius:10px;border:1px solid #eef6ef;background:#fff;margin-bottom:10px; justify-content:space-between }
+        #basketItems .basket-row .b-left { display:flex; gap:12px; align-items:center; flex:1 }
+        #basketItems .basket-row .b-icon { width:48px;height:48px;border-radius:10px;background:#f2fff2;display:flex;align-items:center;justify-content:center;color:#2e7d32;font-size:18px }
+        #basketItems .basket-row .b-name { font-weight:700;color:#155724 }
+        #basketItems .basket-row .b-meta { font-size:0.95rem;color:#6b6b6b;margin-top:4px }
+        #basketItems .basket-row .b-remove { padding:6px 10px;border-radius:8px; font-weight:600; margin-left:12px }
+        /* Make remove button smaller and outline-style */
+        #basketItems .basket-row .b-remove.btn-secondary { background:transparent;border:1px solid #ddd;color:#444 }
+
+        /* Basket footer actions */
+        #basketItems + div { margin-top:8px }
+        @media (max-width:600px){ .df-card{ max-width:92%; } #basketItems .basket-row{ padding:12px } }
+    </style>
+
+    <script>
+        (function(){
+            // Donation basket runtime
+            let basket = JSON.parse(sessionStorage.getItem('nimfresh-basket')||'[]');
+
+            function saveBasket(){ sessionStorage.setItem('nimfresh-basket', JSON.stringify(basket)); }
+
+            function renderBasket(){
+                const wrap = document.getElementById('basketItems');
+                wrap.innerHTML = '';
+                if (!basket.length) { wrap.innerHTML = '<div style="color:#666">No items selected.</div>'; return; }
+                basket.forEach(it=>{
+                    const r = document.createElement('div'); r.className='basket-row';
+                    r.innerHTML = `<div class="b-left"><div class="b-icon"><i class="${it.icon}"></i></div><div style="flex:1"><div class="b-name">${it.name}</div><div class="b-meta">${it.quantity} • ${it.status||''}</div></div></div><div><button class="btn btn-secondary b-remove" data-id="${it.id}">Remove</button></div>`;
+                    wrap.appendChild(r);
+                });
+                // remove handlers
+                wrap.querySelectorAll('.b-remove').forEach(b=> b.addEventListener('click', ()=>{ basket = basket.filter(x=>String(x.id)!==String(b.getAttribute('data-id'))); saveBasket(); renderBasket(); showNotification('Removed from basket','info'); }));
+            }
+
+            // Open basket modal
+            function openBasket(){ document.body.classList.add('modal-open'); document.getElementById('donationBasketModal').setAttribute('aria-hidden','false'); renderBasket(); }
+            function closeBasket(){ document.getElementById('donationBasketModal').setAttribute('aria-hidden','true'); document.body.classList.remove('modal-open'); }
+
+            // Open schedule modal and populate organizations
+            function openSchedule(){
+                const sel = document.getElementById('scheduleOrg'); sel.innerHTML = '';
+                document.querySelectorAll('.organization-card').forEach(card=>{
+                    const name = card.querySelector('h3').textContent;
+                    const opt = document.createElement('option'); opt.value = name; opt.textContent = name; sel.appendChild(opt);
+                });
+                // If a default org was set (by Donate Now), preselect it
+                try{
+                    if (window._nimfresh_schedule_default_org){
+                        const def = window._nimfresh_schedule_default_org;
+                        const opt = Array.from(sel.options).find(o=>o.value===def);
+                        if (opt) sel.value = def;
+                        // clear default so it doesn't persist
+                        window._nimfresh_schedule_default_org = null;
+                    }
+                }catch(e){/* ignore */}
+                document.body.classList.add('modal-open'); document.getElementById('scheduleModal').setAttribute('aria-hidden','false');
+            }
+
+            function closeSchedule(){ document.getElementById('scheduleModal').setAttribute('aria-hidden','true'); document.body.classList.remove('modal-open'); }
+
+            // Open history modal
+            function openHistory(){ renderHistory(); document.body.classList.add('modal-open'); document.getElementById('historyModal').setAttribute('aria-hidden','false'); }
+            function closeHistory(){ document.getElementById('historyModal').setAttribute('aria-hidden','true'); document.body.classList.remove('modal-open'); }
+
+            // render donation history from localStorage nimfresh-donations
+            function renderHistory(){
+                const list = document.getElementById('historyList'); list.innerHTML = '';
+                const records = JSON.parse(localStorage.getItem('nimfresh-donations')||'[]');
+                if (!records.length) { list.innerHTML = '<div style="color:#666">No donations yet.</div>'; return; }
+                records.slice().reverse().forEach(rec=>{
+                    const el = document.createElement('div'); el.className='impact-card';
+                    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>${rec.organization}</strong><div style="font-size:0.9rem;color:#666">${rec.items.length} items • ${rec.date}</div></div><div style="text-align:right">${rec.status}<div style="margin-top:6px"><button class="btn btn-secondary history-view" data-id="${rec.id}">View</button></div></div></div>`;
+                    list.appendChild(el);
+                });
+                list.querySelectorAll('.history-view').forEach(b=> b.addEventListener('click', function(){ const id=this.getAttribute('data-id'); const recs=JSON.parse(localStorage.getItem('nimfresh-donations')||'[]'); const r=recs.find(x=>String(x.id)===String(id)); if (r) alert(`Donation to ${r.organization}\nItems: ${r.items.map(i=>i.name).join(', ')}\nPickup: ${r.pickup}`); }));
+            }
+
+            // utility notification (reuse existing showNotification if available)
+            function showNotification(msg, type){ try{ if (typeof window.showNotification === 'function'){ window.showNotification(msg,type); return; } }catch(e){} alert(msg); }
+
+            // add item to basket
+            window.addToDonationBasket = function(item){
+                // avoid duplicates by id
+                if (basket.find(b=>String(b.id)===String(item.id))) { showNotification('Item already in basket','info'); openBasket(); return; }
+                basket.push(item); saveBasket(); showNotification('Added to basket','success'); openBasket();
+            }
+
+            // quick-add by category
+            function addCategoryToBasket(cat){
+                const items = Array.from(document.querySelectorAll('.food-item')).filter(fi=> fi.getAttribute('data-category')===cat);
+                items.forEach(fi=>{
+                    const name = fi.querySelector('.item-details h3').textContent;
+                    const qtyText = fi.querySelector('.item-details p:nth-of-type(2)').textContent || '';
+                    const iconEl = fi.querySelector('.item-image i');
+                    const icon = iconEl ? iconEl.className : 'fas fa-cube';
+                    const id = fi.getAttribute('data-item-id') || Date.now()+Math.random();
+                    const it = { id, name, icon, quantity: (qtyText.match(/Quantity:\s*([^•]+)/)||[])[1] || '', status: fi.querySelector('.item-status') ? fi.querySelector('.item-status').textContent : '' };
+                    if (!basket.find(b=>String(b.id)===String(it.id))) basket.push(it);
+                });
+                saveBasket(); openBasket(); showNotification('Added category items to basket','success');
+            }
+
+            // schedule confirm
+            document.getElementById('scheduleConfirm').addEventListener('click', function(){
+                const org = document.getElementById('scheduleOrg').value;
+                const date = document.getElementById('pickupDate').value;
+                const time = document.getElementById('pickupTime').value;
+                if (!org || !date || !time){ showNotification('Please choose organization, date and time','error'); return; }
+                if (!basket.length){ showNotification('No items in basket','error'); return; }
+                const recs = JSON.parse(localStorage.getItem('nimfresh-donations')||'[]');
+                const rec = { id: Date.now(), organization: org, items: basket.slice(), date: new Date().toLocaleString(), pickup: `${date} ${time}`, status: 'Scheduled' };
+                recs.push(rec); localStorage.setItem('nimfresh-donations', JSON.stringify(recs));
+                // clear basket
+                basket = []; saveBasket(); renderBasket(); closeSchedule(); closeBasket(); showNotification('Pickup scheduled — thank you!', 'success');
+            });
+
+            // wire UI buttons
+            document.getElementById('basketClose').addEventListener('click', closeBasket);
+            document.getElementById('basketClear').addEventListener('click', function(){ basket=[]; saveBasket(); renderBasket(); showNotification('Basket cleared','info'); });
+            document.getElementById('basketSchedule').addEventListener('click', function(){ closeBasket(); openSchedule(); });
+            document.getElementById('scheduleClose').addEventListener('click', closeSchedule);
+            document.getElementById('scheduleCancel').addEventListener('click', closeSchedule);
+            document.getElementById('historyClose').addEventListener('click', closeHistory);
+
+            // wire donate buttons on page
+            document.querySelectorAll('.donate-btn').forEach(btn => btn.addEventListener('click', function(){
+                const name = this.getAttribute('data-item');
+                const container = this.closest('.food-item');
+                const iconEl = container.querySelector('.item-image i');
+                const icon = iconEl ? iconEl.className : 'fas fa-cube';
+                const qtyText = container.querySelector('.item-details p:nth-of-type(2)').textContent || '';
+                const qty = (qtyText.match(/Quantity:\s*([^•]+)/)||[])[1] || '';
+                const it = { id: Date.now()+Math.random(), name, icon, quantity: qty, status: container.querySelector('.item-status') ? container.querySelector('.item-status').textContent : '' };
+                window.addToDonationBasket(it);
+            }));
+
+            // wire quick actions: update filter dropdown and show filtered items (don't auto-add to basket)
+            function applyDonateFilter(filterKey){
+                try{
+                    filterDonationItems(filterKey);
+                    // update legacy button active state
+                    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+                    const legacy = document.querySelector(`.filter-btn[data-filter="${filterKey}"]`);
+                    if (legacy) legacy.classList.add('active');
+                    // update dropdown label + mark active option
+                    const donateToggle = document.getElementById('donateFilterToggle');
+                    const donateMenu = document.getElementById('donateFilterMenu');
+                    if (donateMenu && donateToggle){
+                        const opts = Array.from(donateMenu.querySelectorAll('.filter-option'));
+                        opts.forEach(o=>o.classList.toggle('active', o.getAttribute('data-filter')===filterKey));
+                        const sel = donateMenu.querySelector(`.filter-option[data-filter="${filterKey}"]`);
+                        const labelEl = donateToggle.querySelector('.filter-toggle-label');
+                        if (labelEl && sel) labelEl.textContent = sel.textContent;
+                        // ensure menu closed
+                        donateMenu.setAttribute('aria-hidden','true');
+                        donateToggle.setAttribute('aria-expanded','false');
+                    }
+                }catch(e){ console.error(e); }
+            }
+
+            document.getElementById('donate-expiring').addEventListener('click', function(e){ e.preventDefault(); applyDonateFilter('expiring'); });
+            document.getElementById('donate-surplus').addEventListener('click', function(e){ e.preventDefault(); applyDonateFilter('surplus'); });
+            document.getElementById('donation-history').addEventListener('click', function(e){ e.preventDefault(); openHistory(); });
+            // Schedule Pickup quick-action: open schedule modal
+            const schedBtn = document.getElementById('schedule-pickup');
+            if (schedBtn) {
+                schedBtn.addEventListener('click', function(e){ e.preventDefault(); openSchedule(); });
+            }
+
+            // initialize basket UI if present
+            document.addEventListener('DOMContentLoaded', renderBasket);
+        })();
     </script>
 
     <style>

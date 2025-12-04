@@ -7,6 +7,40 @@
     <title>NimFresh - Stock Management</title>
     <link rel="stylesheet" href="dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Section header layout: title left, controls right */
+        .section-header { display: flex; align-items: center; gap: 16px; }
+        /* Put filter container to the far right */
+        .section-header .filter-tabs { margin-left: auto; display:flex; align-items:center; }
+
+        /* On narrow screens stack the title above controls */
+        @media (max-width: 600px) {
+            .section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .section-header .filter-tabs { width: 100%; margin-left: 0; }
+            .filter-dropdown { width: 100%; }
+            .filter-toggle { width: 100%; justify-content: space-between; }
+        }
+
+        /* Filter control responsive behavior (hidden native select for small screens if used) */
+        .filter-select { display: none; padding: 8px 10px; border-radius: 8px; border: 1px solid #e0e0e0; background: white; }
+
+        /* Dropdown filter styles - pill button on right */
+        .filter-dropdown { position: relative; display: inline-block; }
+        .filter-toggle { background: #f4fff6; border: 1px solid #d6edd6; padding: 8px 12px; border-radius: 22px; display: inline-flex; align-items: center; gap:10px; cursor: pointer; font-weight:700; color:#114b22 }
+        .filter-toggle i { color: #0b6b2f; font-size:1rem }
+        .filter-toggle .filter-toggle-label { font-size:0.95rem; color:#0b6b2f }
+        .filter-toggle .toggle-caret { color:#0b6b2f; margin-left:4px }
+        .filter-menu { position: absolute; top: calc(100% + 8px); right: 0; left: auto; background: white; border: 1px solid #e6e6e6; border-radius: 10px; box-shadow: 0 14px 40px rgba(0,0,0,0.10); padding: 8px; display: flex; flex-direction: column; gap:6px; min-width: 220px; z-index: 1000; }
+        .filter-menu[aria-hidden="true"] { display: none; }
+        .filter-option { background: transparent; border: none; text-align: left; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-weight:600; display:flex; align-items:center; justify-content:space-between; }
+        .filter-option:hover { background: #f6fbf6; }
+        .filter-option.active { background: #e9f6ea; color: #155724; }
+        .filter-option.active::after { content: '✓'; color: #2e7d32; font-weight:800; }
+
+        @media (max-width: 700px) {
+            .filter-select { display: inline-block; }
+        }
+    </style>
 </head>
 
 <body>
@@ -115,11 +149,23 @@
             <div class="section-header">
                 <h2>Current Stock</h2>
                 <div class="filter-tabs">
-                    <button class="filter-btn active" data-filter="all">All Items</button>
-                    <button class="filter-btn" data-filter="fresh">Fresh</button>
-                    <button class="filter-btn" data-filter="warning">Expiring Soon</button>
-                    <button class="filter-btn" data-filter="danger">Expired</button>
-                    <button class="filter-btn" data-filter="low">Low Stock</button>
+                    <!-- New compact dropdown-style filter: click to open options -->
+                    <div class="filter-dropdown">
+                        <button id="filterToggle" class="filter-toggle" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-filter"></i>
+                            <span class="filter-toggle-label">All Items</span>
+                            <i class="fas fa-caret-down toggle-caret"></i>
+                        </button>
+                        <div id="filterMenu" class="filter-menu" role="menu" aria-hidden="true">
+                            <button class="filter-option" data-filter="all" role="menuitem">All Items</button>
+                            <button class="filter-option" data-filter="fresh" role="menuitem">Fresh</button>
+                            <button class="filter-option" data-filter="warning" role="menuitem">Expiring Soon</button>
+                            <button class="filter-option" data-filter="danger" role="menuitem">Expired</button>
+                            <button class="filter-option" data-filter="low" role="menuitem">Surplus</button>
+                        </div>
+                    </div>
+
+                    <!-- Desktop buttons removed — using dropdown menu for filtering -->
                 </div>
             </div>
 
@@ -226,6 +272,90 @@
                 </table>
             </div>
         </section>
+
+        <!-- Modals for Quick Actions -->
+        <div id="removeItemModal" class="modal" aria-hidden="true">
+            <div class="modal-card">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+                    <div>
+                        <h3 style="margin:0">Remove Items</h3>
+                        <div style="color:#666;font-size:0.9rem;margin-top:6px">Select items to remove from inventory</div>
+                    </div>
+                    <div style="text-align:right">
+                        <div style="font-size:0.9rem;color:#444">Selected: <span id="removeSelectedCount">0</span></div>
+                        <div style="margin-top:8px">
+                            <label style="font-size:0.9rem;color:#444"><input type="checkbox" id="removeSelectAll"> Select all</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+                    <input id="removeSearch" placeholder="Search items to remove..." style="flex:1;padding:8px;border-radius:8px;border:1px solid #ddd">
+                </div>
+
+                <div id="removeItemList" style="max-height:320px;overflow:auto;margin-top:12px;padding-right:6px"></div>
+
+                <div style="margin-top:12px;text-align:right;display:flex;gap:8px;justify-content:flex-end;align-items:center">
+                    <button class="btn btn-secondary" id="removeCancel">Cancel</button>
+                    <button class="btn btn-primary" id="removeConfirm" disabled>Remove Selected</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="updateStockModal" class="modal" aria-hidden="true">
+            <div class="modal-card">
+                <h3>Update Stock</h3>
+                <p>Edit an existing item or create a new one.</p>
+                <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+                    <select id="updateSelect" style="flex:1;padding:8px;border-radius:8px;border:1px solid #ddd">
+                        <option value="__new">+ Add new item</option>
+                    </select>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+                    <input id="updateName" placeholder="Item name" style="padding:8px;border-radius:8px;border:1px solid #ddd">
+                    <input id="updateCategory" placeholder="Category" style="padding:8px;border-radius:8px;border:1px solid #ddd">
+                    <input id="updateQuantity" placeholder="Quantity (e.g., 1kg)" style="padding:8px;border-radius:8px;border:1px solid #ddd">
+                    <input id="updatePurchase" type="date" placeholder="Purchase date" style="padding:8px;border-radius:8px;border:1px solid #ddd">
+                    <input id="updateExpiry" type="date" placeholder="Expiry date" style="padding:8px;border-radius:8px;border:1px solid #ddd">
+                </div>
+                <div style="margin-top:12px;text-align:right">
+                    <button class="btn btn-secondary" id="updateCancel">Cancel</button>
+                    <button class="btn btn-primary" id="updateSave">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="reportModal" class="modal" aria-hidden="true">
+            <div class="modal-card">
+                <h3>Stock Report</h3>
+                <p>Summary of current inventory and export option.</p>
+                <div id="reportContent" style="margin-top:12px"></div>
+                <div style="margin-top:12px;text-align:right">
+                    <button class="btn btn-secondary" id="reportClose">Close</button>
+                    <button class="btn btn-primary" id="reportDownload">Download CSV</button>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            /* Modal basics used by quick actions */
+            .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:2500; align-items:center; justify-content:center; padding:16px; }
+            .modal[aria-hidden="false"] { display:flex; }
+            .modal-card { background:white; width:100%; max-width:720px; border-radius:12px; padding:18px; box-shadow:0 18px 60px rgba(0,0,0,0.18); }
+            .modal-card h3 { margin:0 0 6px 0; }
+            .btn { padding:8px 12px; border-radius:8px; border:0; cursor:pointer; font-weight:700; }
+            .btn-primary { background:#2e7d32; color:white; }
+            .btn-secondary { background:#efefef; color:#333; }
+            .remove-item-row { display:flex; align-items:center; gap:12px; padding:8px; border-radius:8px; border:1px solid #f1f1f1; margin-bottom:8px; }
+            .remove-item-row { display:flex; align-items:center; gap:12px; padding:8px; border-radius:8px; border:1px solid #f1f1f1; margin-bottom:8px; }
+            .remove-item-row .ri-checkbox { width:40px; display:flex; align-items:center; justify-content:center; }
+            .remove-item-row .ri-checkbox input { width:18px; height:18px; }
+            .remove-item-row .ri-icon { width:44px; height:44px; border-radius:8px; background:#f6fff6; display:flex; align-items:center; justify-content:center; color:#2e7d32; }
+            .remove-item-row .ri-icon i { font-size:18px; }
+            .remove-item-row .ri-details { flex:1; display:flex; flex-direction:column; }
+            .remove-item-row .ri-name { font-weight:700; color:#155724 }
+            .remove-item-row .ri-meta { font-size:0.9rem; color:#666; margin-top:4px }
+        </style>
     </main>
 
 <!-- Bottom Navigation -->
@@ -375,10 +505,11 @@
                 }
             });
 
-            // Save item functionality
+            // Save item functionality (persist to localStorage and re-render table)
             saveBtn.addEventListener('click', function() {
                 if (form.checkValidity()) {
                     const itemData = {
+                        id: Date.now(),
                         name: document.getElementById('itemName').value,
                         category: document.getElementById('itemCategory').value,
                         quantity: document.getElementById('itemQuantity').value,
@@ -388,22 +519,260 @@
                         notes: document.getElementById('itemNotes').value
                     };
 
-                    // Here you would typically send the data to your backend
-                    console.log('Adding item:', itemData);
-                    
-                    // For demo purposes, show success message
+                    // Derive a simple status based on expiry date
+                    try {
+                        const now = new Date();
+                        const exp = new Date(itemData.expiryDate);
+                        const diffDays = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+                        if (isNaN(diffDays)) {
+                            itemData.status = 'fresh';
+                        } else if (diffDays < 0) {
+                            itemData.status = 'danger';
+                        } else if (diffDays <= 3) {
+                            itemData.status = 'warning';
+                        } else {
+                            itemData.status = 'fresh';
+                        }
+                    } catch (e) {
+                        itemData.status = 'fresh';
+                    }
+
+                    // Persist using stock.js helpers
+                    const existing = (typeof loadStock === 'function') ? loadStock() : [];
+                    existing.push(itemData);
+                    if (typeof saveStock === 'function') saveStock(existing);
+                    if (typeof renderStockTable === 'function') renderStockTable(existing);
+
+                    // Provide feedback and close modal
                     alert(`"${itemData.name}" has been added to your stock successfully!`);
-                    
                     closeModal();
-                    
-                    // In a real app, you would update the table here
-                    // updateStockTable(itemData);
-                    
                 } else {
                     alert('Please fill in all required fields.');
                 }
             });
+
+            // If storage changes in another tab (e.g., after scanning), refresh the table
+            window.addEventListener('storage', function(e) {
+                if (e.key === 'nimfresh-stock') {
+                    const items = (typeof loadStock === 'function') ? loadStock() : [];
+                    if (typeof renderStockTable === 'function') renderStockTable(items);
+                }
+            });
         });
+    </script>
+    
+    <!-- Recent Scans & Bill Details script -->
+    <script>
+        // Render recent scanned bills on the landing page
+        (function() {
+            // Create Recent Scans container and insert into DOM under the main content wrapper
+            const wrapper = document.querySelector('.content-wrapper');
+            if (!wrapper) return;
+
+            const recentSection = document.createElement('section');
+            recentSection.className = 'recent-scans-landing';
+            recentSection.innerHTML = `
+                <h3>Recent Scans</h3>
+                <div class="recent-scans-list" id="recentScansList">
+                    <p class="empty-note">No recent scans yet. Use Scan to upload a bill.</p>
+                </div>
+            `;
+
+            // Insert before the security note for visibility
+            const securityNote = document.querySelector('.security-note');
+            if (securityNote && securityNote.parentNode) {
+                securityNote.parentNode.insertBefore(recentSection, securityNote);
+            } else {
+                wrapper.appendChild(recentSection);
+            }
+
+            // Add minimal styles for the section
+            const style = document.createElement('style');
+            style.textContent = `
+                .recent-scans-landing { background: #fff; padding: 18px; border-radius: 12px; margin: 18px 0; box-shadow: 0 10px 30px rgba(0,0,0,0.06); }
+                .recent-scans-landing h3 { margin: 0 0 12px 0; color: #1b5e20; }
+                .recent-scans-item { display:flex; align-items:center; gap:12px; padding:12px; border-radius:10px; background:#f1faf1; margin-bottom:10px; cursor:pointer; }
+                .recent-scans-item:hover { background:#e6f6e6; transform:translateX(4px); }
+                .recent-scan-icon { width:44px; height:44px; background:#2e7d32; color:white; display:flex; align-items:center; justify-content:center; border-radius:8px; }
+                .recent-scan-meta h4 { margin:0; font-size:1rem; color:#155724; }
+                .recent-scan-meta p { margin:4px 0 0 0; color:#4b4b4b; font-size:0.9rem; }
+                .empty-note { color:#777; padding:10px 0; }
+                /* Bill details modal */
+                .landing-bill-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:2200; justify-content:center; align-items:center; padding:20px; }
+                .landing-bill-modal.active { display:flex; }
+                .landing-bill-card { background:white; width:100%; max-width:720px; border-radius:12px; overflow:auto; max-height:85vh; }
+                .landing-bill-header { padding:18px; background:linear-gradient(135deg,#2e7d32,#155724); color:white; display:flex; gap:12px; align-items:center; }
+                .landing-bill-body { padding:16px; }
+                .landing-bill-items { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+                .landing-item-row { display:flex; gap:12px; align-items:center; padding:10px; background:#f7fff7; border-radius:8px; }
+                .landing-item-icon { width:42px; height:42px; display:flex; align-items:center; justify-content:center; background:white; border-radius:8px; color:#2e7d32; }
+                .landing-bill-footer { padding:12px; display:flex; gap:8px; justify-content:flex-end; border-top:1px solid #eee; }
+                .btn { padding:10px 14px; border-radius:8px; border:none; cursor:pointer; font-weight:600; }
+                .btn-primary { background:#2e7d32; color:white; }
+                .btn-secondary { background:#efefef; color:#333; }
+            `;
+            document.head.appendChild(style);
+
+            // Create modal element
+            const modal = document.createElement('div');
+            modal.className = 'landing-bill-modal';
+            modal.id = 'landingBillModal';
+            modal.innerHTML = `
+                <div class="landing-bill-card">
+                    <div class="landing-bill-header">
+                        <div style="width:56px;height:56px;background:rgba(255,255,255,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">📄</div>
+                        <div>
+                            <div id="landingBillName" style="font-size:1.2rem;font-weight:800"></div>
+                            <div id="landingBillDate" style="opacity:0.95;font-size:0.9rem;margin-top:6px"></div>
+                        </div>
+                    </div>
+                    <div class="landing-bill-body">
+                        <div class="info-cards" style="display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap">
+                            <div style="flex:1;min-width:140px;background:#f1faf1;padding:14px;border-radius:12px;border-left:6px solid #2e7d32">
+                                <div style="font-size:0.75rem;color:#666;font-weight:700">FILE SIZE</div>
+                                <div id="landingBillSize" style="font-size:1.3rem;font-weight:800;color:#155724;margin-top:6px">-</div>
+                            </div>
+                            <div style="flex:1;min-width:140px;background:#f1faf1;padding:14px;border-radius:12px;border-left:6px solid #2e7d32">
+                                <div style="font-size:0.75rem;color:#666;font-weight:700">ITEMS DETECTED</div>
+                                <div id="landingBillCount" style="font-size:1.3rem;font-weight:800;color:#155724;margin-top:6px">0</div>
+                            </div>
+                            <div style="flex:1;min-width:140px;background:#f1faf1;padding:14px;border-radius:12px;border-left:6px solid #2e7d32">
+                                <div style="font-size:0.75rem;color:#666;font-weight:700">STATUS</div>
+                                <div id="landingBillStatus" style="display:inline-block;background:#e8f5ea;color:#155724;padding:6px 12px;border-radius:20px;margin-top:6px;font-weight:700">Processed</div>
+                            </div>
+                        </div>
+                        <h4 style="margin:6px 0 12px 0;color:#155724">Detected Items</h4>
+                        <div class="landing-bill-items" id="landingBillItems"></div>
+                    </div>
+                    <div class="landing-bill-footer">
+                        <button class="btn btn-secondary" id="landingBillClose">Close</button>
+                        <button class="btn btn-primary" id="landingBillAddAll">Add All to Stock</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            // Helper: show notification
+            function showNotification(msg, type='info'){
+                const n = document.createElement('div');
+                n.textContent = msg;
+                n.style.cssText = 'position:fixed;top:18px;right:18px;padding:12px 16px;border-radius:10px;color:white;z-index:2300;box-shadow:0 6px 20px rgba(0,0,0,0.12);';
+                n.style.background = type==='success'? '#4caf50' : type==='error'? '#f44336' : '#2196f3';
+                document.body.appendChild(n);
+                setTimeout(()=> n.remove(), 3000);
+            }
+
+            // Ensure a sample bill is present (for demo) — only add if none exists
+            function ensureSampleBill() {
+                try {
+                    const bills = JSON.parse(localStorage.getItem('nimfresh-bills')) || [];
+                    if (bills.length) return;
+
+                    const sample = {
+                        id: Date.now(),
+                        fileName: 'download.png',
+                        uploadDate: '11/13/2025, 12:54:57 AM',
+                        fileSize: '5.22',
+                        itemsDetected: 3,
+                        status: 'Processed',
+                        items: [
+                            { id: Date.now() + 1, name: 'Fresh Apples', icon: 'fas fa-apple-alt', category: 'Fruits', quantity: '1kg', status: 'fresh' },
+                            { id: Date.now() + 2, name: 'Organic Carrots', icon: 'fas fa-carrot', category: 'Vegetables', quantity: '500g', status: 'fresh' },
+                            { id: Date.now() + 3, name: 'Whole Milk', icon: 'fas fa-wine-bottle', category: 'Dairy', quantity: '1L', status: 'warning' }
+                        ]
+                    };
+
+                    bills.unshift(sample);
+                    localStorage.setItem('nimfresh-bills', JSON.stringify(bills));
+                } catch (e) {
+                    console.error('Failed to create sample bill', e);
+                }
+            }
+
+            // Render bills
+            function renderRecentBills(){
+                const list = document.getElementById('recentScansList');
+                if (!list) return;
+                let bills = [];
+                try{ bills = JSON.parse(localStorage.getItem('nimfresh-bills')) || []; }catch(e){ bills = []; }
+
+                if (!bills.length){ list.innerHTML = '<p class="empty-note">No recent scans yet. Use Scan to upload a bill.</p>'; return; }
+
+                list.innerHTML = '';
+                bills.slice(0,5).forEach(bill => {
+                    const item = document.createElement('div');
+                    item.className = 'recent-scans-item';
+                    item.innerHTML = `
+                        <div class="recent-scan-icon"><i class="fas fa-receipt"></i></div>
+                        <div class="recent-scan-meta">
+                            <h4>${bill.fileName}</h4>
+                            <p>${bill.uploadDate} • ${bill.itemsDetected} items detected</p>
+                        </div>
+                    `;
+                    item.addEventListener('click', () => showLandingBill(bill));
+                    list.appendChild(item);
+                });
+            }
+
+            // Show bill in modal
+            function showLandingBill(bill){
+                document.getElementById('landingBillName').textContent = bill.fileName;
+                document.getElementById('landingBillDate').textContent = bill.uploadDate;
+                document.getElementById('landingBillSize').textContent = bill.fileSize || '-';
+                document.getElementById('landingBillCount').textContent = bill.itemsDetected || 0;
+                document.getElementById('landingBillStatus').textContent = bill.status || 'Processed';
+
+                const itemsWrap = document.getElementById('landingBillItems');
+                itemsWrap.innerHTML = '';
+                if (bill.items && bill.items.length){
+                    bill.items.forEach(it => {
+                        const row = document.createElement('div');
+                        row.className = 'landing-item-row';
+                        row.innerHTML = `
+                            <div class="landing-item-icon"><i class="${it.icon || 'fas fa-cube'}"></i></div>
+                            <div style="flex:1">
+                                <div style="font-weight:700">${it.name}</div>
+                                <div style="color:#666;font-size:0.9rem">${it.category} • ${it.quantity}</div>
+                            </div>
+                            <div style="font-weight:700;color:${it.status==='danger'?'#c62828':it.status==='warning'?'#ff9800':'#2e7d32'}">${(it.status||'fresh').charAt(0).toUpperCase()+(it.status||'fresh').slice(1)}</div>
+                        `;
+                        itemsWrap.appendChild(row);
+                    });
+                } else {
+                    itemsWrap.innerHTML = '<div style="color:#777;padding:10px">No items detected in this bill.</div>';
+                }
+
+                // store current bill id on modal
+                modal.dataset.currentBillId = bill.id;
+                modal.classList.add('active');
+            }
+
+            // Close / Add All actions
+            document.getElementById('landingBillClose').addEventListener('click', ()=> modal.classList.remove('active'));
+            document.getElementById('landingBillAddAll').addEventListener('click', ()=>{
+                try{
+                    const id = modal.dataset.currentBillId;
+                    let bills = JSON.parse(localStorage.getItem('nimfresh-bills')) || [];
+                    const bill = bills.find(b=>String(b.id)===String(id));
+                    if (!bill || !bill.items || !bill.items.length){ showNotification('No items to add','info'); return; }
+                    let stock = JSON.parse(localStorage.getItem('nimfresh-stock')) || [];
+                    stock = stock.concat(bill.items);
+                    localStorage.setItem('nimfresh-stock', JSON.stringify(stock));
+                    showNotification(`Added ${bill.items.length} items to inventory`, 'success');
+                    modal.classList.remove('active');
+                }catch(e){ console.error(e); showNotification('Failed to add items', 'error'); }
+            });
+
+            // Close modal when clicking background
+            modal.addEventListener('click', (e)=>{ if (e.target===modal) modal.classList.remove('active'); });
+
+            // Ensure demo data and initial render
+            ensureSampleBill();
+            renderRecentBills();
+
+            // Re-render when bills change (storage event)
+            window.addEventListener('storage', (e)=>{ if (e.key==='nimfresh-bills'){ renderRecentBills(); } });
+        })();
     </script>
 
     <style>

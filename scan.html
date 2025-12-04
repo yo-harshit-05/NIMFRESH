@@ -431,12 +431,16 @@
             }
         }
 
-        /* Scan Controls */
+        /* Scan Controls - Fully Responsive */
         .scan-controls {
             display: flex;
             gap: 15px;
-            flex-wrap: wrap;
             justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            width: 100%;
+            padding: 0 20px;
+            box-sizing: border-box;
         }
 
         .scan-btn {
@@ -450,15 +454,36 @@
             cursor: pointer;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 10px;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3);
+            white-space: nowrap;
+            text-decoration: none;
+            outline: none;
+            border: 2px solid transparent;
         }
 
         .scan-btn:hover {
             background: var(--dark);
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(46, 125, 50, 0.4);
+        }
+
+        .scan-btn:focus {
+            outline: 2px solid rgba(46, 125, 50, 0.5);
+            outline-offset: 2px;
+        }
+
+        .scan-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(46, 125, 50, 0.3);
+        }
+
+        .scan-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .scan-btn.secondary {
@@ -471,8 +496,208 @@
             box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
         }
 
+        .scan-btn.secondary:focus {
+            outline: 2px solid rgba(255, 152, 0, 0.5);
+            outline-offset: 2px;
+        }
+
         .scan-btn i {
             font-size: 1.2rem;
+        }
+
+        /* Camera Modal Styles */
+        .camera-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .camera-modal.active {
+            display: flex;
+        }
+
+        .camera-modal-content {
+            width: 100%;
+            max-width: 500px;
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .camera-close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 2rem;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .camera-close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .camera-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%;
+            background: #000;
+        }
+
+        .camera-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-frame-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+
+        .frame-corner {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 3px solid var(--primary);
+        }
+
+        .top-left {
+            top: 20px;
+            left: 20px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .top-right {
+            top: 20px;
+            right: 20px;
+            border-left: none;
+            border-bottom: none;
+        }
+
+        .bottom-left {
+            bottom: 20px;
+            left: 20px;
+            border-right: none;
+            border-top: none;
+        }
+
+        .bottom-right {
+            bottom: 20px;
+            right: 20px;
+            border-left: none;
+            border-top: none;
+        }
+
+        .scan-line {
+            position: absolute;
+            width: 80%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            top: 50%;
+            left: 10%;
+            animation: scanLine 2s infinite;
+        }
+
+        @keyframes scanLine {
+            0%, 100% { top: 30%; opacity: 0; }
+            50% { opacity: 1; }
+            100% { top: 70%; opacity: 0; }
+        }
+
+        .camera-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .camera-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(46, 125, 50, 0.4);
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .camera-btn:hover {
+            background: var(--dark);
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(46, 125, 50, 0.6);
+        }
+
+        .camera-btn:active {
+            transform: scale(0.95);
+        }
+
+        .camera-btn i {
+            font-size: 1.5rem;
+        }
+
+        .flash-btn {
+            background: var(--secondary);
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
+        }
+
+        .flash-btn:hover {
+            background: #e68900;
+            box-shadow: 0 6px 20px rgba(255, 152, 0, 0.6);
+        }
+
+        .flash-btn.active {
+            background: #FFD700;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+        }
+
+        .camera-info {
+            background: rgba(0, 0, 0, 0.8);
+            color: rgba(255, 255, 255, 0.8);
+            padding: 15px;
+            text-align: center;
+            font-size: 0.9rem;
         }
 
         /* Scan Instructions */
@@ -601,11 +826,13 @@
             border-radius: 10px;
             background: var(--light);
             transition: all 0.3s ease;
+            cursor: pointer;
         }
 
         .scan-item:hover {
             transform: translateX(5px);
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            background: #d4edda;
         }
 
         .scan-icon {
@@ -646,6 +873,247 @@
         .status-processing {
             background: #fff3cd;
             color: #856404;
+        }
+
+        /* Bill Details Modal */
+        .bill-details-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .bill-details-modal.active {
+            display: flex;
+        }
+
+        .bill-details-content {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+            position: relative;
+        }
+
+        .bill-details-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #666;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .bill-details-close:hover {
+            background: #f0f0f0;
+            color: var(--dark);
+        }
+
+        .bill-details-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%);
+            color: white;
+            padding: 30px 25px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .bill-icon {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            flex-shrink: 0;
+        }
+
+        .bill-header-info h2 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            word-break: break-word;
+        }
+
+        .bill-header-info p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .bill-details-body {
+            padding: 25px;
+        }
+
+        .bill-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .info-card {
+            background: var(--light);
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .info-label {
+            font-size: 0.8rem;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .info-value.status-badge {
+            display: inline-block;
+            background: #d4edda;
+            color: #155724;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            width: fit-content;
+        }
+
+        .bill-items-section h3 {
+            color: var(--dark);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .item-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px;
+            background: var(--light);
+            border-radius: 10px;
+            border-left: 3px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .item-row:hover {
+            background: #e0f2e0;
+            transform: translateX(5px);
+        }
+
+        .item-row-icon {
+            width: 45px;
+            height: 45px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .item-row-info {
+            flex: 1;
+        }
+
+        .item-row-name {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 3px;
+        }
+
+        .item-row-meta {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .item-row-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .bill-details-footer {
+            padding: 20px 25px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            background: #fafafa;
+            border-radius: 0 0 20px 20px;
+        }
+
+        .btn-primary, .btn-secondary {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
         }
 
         /* Bottom Navigation */
@@ -716,13 +1184,18 @@
             }
 
             .scan-controls {
-                flex-direction: column;
-                width: 100%;
+                gap: 12px;
+                padding: 0 15px;
             }
 
             .scan-btn {
-                width: 100%;
-                justify-content: center;
+                padding: 12px 20px;
+                font-size: 0.95rem;
+                min-height: 45px;
+            }
+
+            .scan-btn i {
+                font-size: 1.1rem;
             }
 
             .camera-preview {
@@ -753,6 +1226,60 @@
 
             .scan-content {
                 padding: 20px;
+            }
+
+            .scan-controls {
+                flex-direction: column;
+                gap: 10px;
+                padding: 0 15px;
+            }
+
+            .scan-btn {
+                width: 100%;
+                padding: 14px 20px;
+                font-size: 0.9rem;
+                min-height: 50px;
+                border-radius: 40px;
+            }
+
+            .scan-btn i {
+                font-size: 1rem;
+            }
+
+            .camera-preview {
+                height: 250px;
+            }
+
+            .scanner-container {
+                gap: 15px;
+            }
+
+            .camera-modal-content {
+                max-width: 100%;
+                border-radius: 0;
+            }
+
+            .camera-close-btn {
+                top: 10px;
+                right: 10px;
+                width: 45px;
+                height: 45px;
+                font-size: 1.8rem;
+            }
+
+            .camera-controls {
+                padding: 15px;
+                gap: 15px;
+            }
+
+            .camera-btn {
+                width: 55px;
+                height: 55px;
+                font-size: 0.75rem;
+            }
+
+            .camera-btn i {
+                font-size: 1.3rem;
             }
         }
     </style>
@@ -788,6 +1315,85 @@
             </div>
         </div>
     </header>
+
+    <!-- Camera Modal -->
+    <div class="camera-modal" id="cameraModal">
+        <div class="camera-modal-content">
+            <button class="camera-close-btn" id="cameraCloseBtn">&times;</button>
+            
+            <div class="camera-container">
+                <video id="cameraVideo" class="camera-video" playsinline autoplay></video>
+                <div class="camera-frame-overlay">
+                    <div class="frame-corner top-left"></div>
+                    <div class="frame-corner top-right"></div>
+                    <div class="frame-corner bottom-left"></div>
+                    <div class="frame-corner bottom-right"></div>
+                    <div class="scan-line"></div>
+                </div>
+            </div>
+
+            <div class="camera-controls">
+                <button class="camera-btn capture-btn" id="captureBtn">
+                    <i class="fas fa-circle"></i>
+                    <span>Capture</span>
+                </button>
+                <button class="camera-btn flash-btn" id="cameraFlashBtn">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>Flash</span>
+                </button>
+            </div>
+
+            <div class="camera-info">
+                <p>Position your bill within the frame and tap Capture</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bill Details Modal -->
+    <div class="bill-details-modal" id="billDetailsModal">
+        <div class="bill-details-content">
+            <button class="bill-details-close" id="billDetailsClose">&times;</button>
+            
+            <div class="bill-details-header">
+                <div class="bill-icon">
+                    <i class="fas fa-receipt"></i>
+                </div>
+                <div class="bill-header-info">
+                    <h2 id="billFileName">Bill Name</h2>
+                    <p id="billUploadDate">Upload Date</p>
+                </div>
+            </div>
+
+            <div class="bill-details-body">
+                <div class="bill-info-grid">
+                    <div class="info-card">
+                        <span class="info-label">File Size</span>
+                        <span class="info-value" id="billFileSize">-</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-label">Items Detected</span>
+                        <span class="info-value" id="billItemCount">0</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-label">Status</span>
+                        <span class="info-value status-badge" id="billStatus">Processed</span>
+                    </div>
+                </div>
+
+                <div class="bill-items-section">
+                    <h3>Detected Items</h3>
+                    <div class="items-list" id="billItemsList">
+                        <!-- Items will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="bill-details-footer">
+                <button class="btn-secondary" id="billCloseBtnFooter">Close</button>
+                <button class="btn-primary" id="billAddAllBtn">Add All to Stock</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Main Content -->
     <main class="scan-main">
@@ -927,35 +1533,466 @@
     </nav>
 
     <script>
-        // Simple JavaScript for scan functionality
+        // Comprehensive scan functionality with camera modal
         document.addEventListener('DOMContentLoaded', function () {
             const startScanBtn = document.getElementById('start-scan');
             const toggleFlashBtn = document.getElementById('toggle-flash');
             const uploadArea = document.getElementById('upload-area');
             const fileInput = document.getElementById('file-input');
+            const cameraModal = document.getElementById('cameraModal');
+            const cameraCloseBtn = document.getElementById('cameraCloseBtn');
+            const cameraVideo = document.getElementById('cameraVideo');
+            const captureBtn = document.getElementById('captureBtn');
+            const cameraFlashBtn = document.getElementById('cameraFlashBtn');
+            
+            // State tracking
+            let cameraFlashEnabled = false;
+            let cameraStream = null;
 
-            // Start scan button functionality
-            startScanBtn.addEventListener('click', function () {
-                // In a real app, this would activate the camera
-                alert('Camera scanning functionality would be activated here. In a real implementation, this would use the device camera to scan grocery bills.');
+            // Load user data
+            const userData = JSON.parse(localStorage.getItem('nimfresh-user'));
+            if (userData && userData.username) {
+                document.getElementById('welcome-text').textContent = `Welcome, ${userData.username}`;
+            }
+
+            // Open Camera Modal - Start Scanning Button
+            startScanBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                openCameraModal();
             });
 
-            // Toggle flash button functionality
-            toggleFlashBtn.addEventListener('click', function () {
-                // In a real app, this would toggle the camera flash
-                alert('Flash functionality would be toggled here.');
+            // Open Camera Modal Function
+            function openCameraModal() {
+                cameraModal.classList.add('active');
+                startCamera();
+            }
+
+            // Close Camera Modal
+            function closeCameraModal() {
+                cameraModal.classList.remove('active');
+                stopCamera();
+            }
+
+            cameraCloseBtn.addEventListener('click', closeCameraModal);
+
+            // Close modal when clicking outside
+            cameraModal.addEventListener('click', function (e) {
+                if (e.target === cameraModal) {
+                    closeCameraModal();
+                }
             });
 
-            // File upload functionality
+            // Start Camera Function
+            function startCamera() {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    const constraints = {
+                        video: {
+                            facingMode: 'environment',
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 }
+                        },
+                        audio: false
+                    };
+
+                    navigator.mediaDevices.getUserMedia(constraints)
+                        .then(function (stream) {
+                            cameraStream = stream;
+                            cameraVideo.srcObject = stream;
+                            showNotification('Camera ready', 'success');
+                        })
+                        .catch(function (err) {
+                            showNotification('Camera access denied. Using demo mode.', 'info');
+                            // Show placeholder if camera not available
+                            cameraVideo.style.background = 'linear-gradient(135deg, #333 0%, #555 100%)';
+                        });
+                } else {
+                    showNotification('Camera not supported on this device', 'error');
+                }
+            }
+
+            // Stop Camera Function
+            function stopCamera() {
+                if (cameraStream) {
+                    cameraStream.getTracks().forEach(track => track.stop());
+                    cameraStream = null;
+                }
+            }
+
+            // Capture Button - Take Photo
+            captureBtn.addEventListener('click', function () {
+                captureBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                captureBtn.disabled = true;
+
+                // Simulate bill scanning and actually persist items to storage
+                setTimeout(() => {
+                    showNotification('Bill captured! Processing...', 'success');
+
+                    // Example detected items (in a real app OCR would provide these)
+                    const detectedItems = [
+                        { id: Date.now() + 1, name: 'Fresh Apples', icon: 'fas fa-apple-alt', category: 'Fruits', quantity: '1kg', purchaseDate: new Date().toISOString().split('T')[0], expiryDate: '2025-10-15', status: 'fresh' },
+                        { id: Date.now() + 2, name: 'Organic Carrots', icon: 'fas fa-carrot', category: 'Vegetables', quantity: '500g', purchaseDate: new Date().toISOString().split('T')[0], expiryDate: '2025-10-20', status: 'fresh' },
+                        { id: Date.now() + 3, name: 'Whole Milk', icon: 'fas fa-wine-bottle', category: 'Dairy', quantity: '1L', purchaseDate: new Date().toISOString().split('T')[0], expiryDate: '2025-10-12', status: 'warning' }
+                    ];
+
+                    // Load existing stock from localStorage
+                    let existing = [];
+                    try {
+                        existing = JSON.parse(localStorage.getItem('nimfresh-stock')) || [];
+                    } catch (e) {
+                        existing = [];
+                    }
+
+                    // Append detected items and save
+                    const updated = existing.concat(detectedItems);
+                    try {
+                        localStorage.setItem('nimfresh-stock', JSON.stringify(updated));
+                        showNotification(`✓ ${detectedItems.length} items added to inventory`, 'success');
+                    } catch (e) {
+                        console.error('Failed to save scanned items', e);
+                        showNotification('Failed to add scanned items to inventory', 'error');
+                    }
+
+                    // finish UI
+                    setTimeout(() => {
+                        closeCameraModal();
+                        captureBtn.innerHTML = '<i class="fas fa-circle"></i><span>Capture</span>';
+                        captureBtn.disabled = false;
+                    }, 800);
+                }, 800);
+            });
+
+            // Camera Flash Toggle
+            cameraFlashBtn.addEventListener('click', function () {
+                cameraFlashEnabled = !cameraFlashEnabled;
+                
+                if (cameraFlashEnabled) {
+                    cameraFlashBtn.classList.add('active');
+                    showNotification('Flash enabled', 'success');
+                    // In real app, would toggle camera torch
+                } else {
+                    cameraFlashBtn.classList.remove('active');
+                    showNotification('Flash disabled', 'info');
+                }
+            });
+
+            // Toggle Flash Button on main page (hidden now)
+            toggleFlashBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                showNotification('Open camera first to use flash', 'info');
+            });
+
+            // File Upload Functionality with Bill Data Saving
             uploadArea.addEventListener('click', function () {
                 fileInput.click();
             });
 
             fileInput.addEventListener('change', function () {
                 if (this.files && this.files[0]) {
-                    alert('File selected: ' + this.files[0].name + '. In a real implementation, this would upload and process the bill image.');
+                    const file = this.files[0];
+                    const fileName = file.name;
+                    const fileSize = (file.size / 1024).toFixed(2); // Convert to KB
+                    
+                    showNotification(`Processing: ${fileName} (${fileSize} KB)...`, 'info');
+                    
+                    // Simulate bill processing and save bill data
+                    setTimeout(() => {
+                        // Simulate detected items from bill OCR
+                        const detectedItems = [
+                            { id: Date.now() + 1, name: 'Fresh Apples', icon: 'fas fa-apple-alt', category: 'Fruits', quantity: '1kg', purchaseDate: new Date().toISOString().split('T')[0], expiryDate: '2025-10-15', status: 'fresh' },
+                            { id: Date.now() + 2, name: 'Organic Carrots', icon: 'fas fa-carrot', category: 'Vegetables', quantity: '500g', purchaseDate: new Date().toISOString().split('T')[0], expiryDate: '2025-10-20', status: 'fresh' },
+                            { id: Date.now() + 3, name: 'Whole Milk', icon: 'fas fa-wine-bottle', category: 'Dairy', quantity: '1L', purchaseDate: new Date().toISOString().split('T')[0], expiryDate: '2025-10-12', status: 'warning' }
+                        ];
+
+                        // Save bill data with items
+                        const billData = {
+                            id: Date.now(),
+                            fileName: fileName,
+                            fileSize: fileSize,
+                            uploadDate: new Date().toLocaleString(),
+                            itemsDetected: detectedItems.length,
+                            status: 'Processed',
+                            items: detectedItems
+                        };
+
+                        // Load existing bills
+                        let existingBills = [];
+                        try {
+                            existingBills = JSON.parse(localStorage.getItem('nimfresh-bills')) || [];
+                        } catch (e) {
+                            existingBills = [];
+                        }
+
+                        // Add new bill and save
+                        existingBills.unshift(billData);
+                        try {
+                            localStorage.setItem('nimfresh-bills', JSON.stringify(existingBills));
+                            
+                            // Also add detected items to stock
+                            let existing = [];
+                            try {
+                                existing = JSON.parse(localStorage.getItem('nimfresh-stock')) || [];
+                            } catch (e) {
+                                existing = [];
+                            }
+                            const updated = existing.concat(detectedItems);
+                            localStorage.setItem('nimfresh-stock', JSON.stringify(updated));
+                            
+                            showNotification(`✓ Bill saved! ${detectedItems.length} items added to inventory`, 'success');
+                            updateRecentScans();
+                        } catch (e) {
+                            console.error('Failed to save bill', e);
+                            showNotification('Failed to save bill data', 'error');
+                        }
+                    }, 1200);
                 }
             });
+
+            // Drag and drop functionality
+            uploadArea.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                this.style.background = 'rgba(46, 125, 50, 0.1)';
+                this.style.borderColor = 'var(--dark)';
+            });
+
+            uploadArea.addEventListener('dragleave', function (e) {
+                e.preventDefault();
+                this.style.background = 'var(--light)';
+                this.style.borderColor = 'var(--primary)';
+            });
+
+            uploadArea.addEventListener('drop', function (e) {
+                e.preventDefault();
+                this.style.background = 'var(--light)';
+                this.style.borderColor = 'var(--primary)';
+                
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    fileInput.files = e.dataTransfer.files;
+                    const event = new Event('change', { bubbles: true });
+                    fileInput.dispatchEvent(event);
+                }
+            });
+
+            // Notification system
+            function showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                
+                const icons = {
+                    'success': 'check-circle',
+                    'info': 'info-circle',
+                    'error': 'exclamation-circle'
+                };
+                
+                notification.innerHTML = `
+                    <i class="fas fa-${icons[type]}"></i>
+                    <span>${message}</span>
+                `;
+
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${type === 'success' ? '#4caf50' : type === 'info' ? '#2196f3' : '#f44336'};
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    z-index: 1000;
+                    animation: slideInRight 0.3s ease;
+                    font-weight: 600;
+                    max-width: 90%;
+                    font-size: 0.95rem;
+                `;
+
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    notification.style.animation = 'slideOutRight 0.3s ease';
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+
+            // Update Recent Scans section with actual bill data
+            function updateRecentScans() {
+                const scansList = document.querySelector('.scans-list');
+                if (!scansList) return;
+
+                let bills = [];
+                try {
+                    bills = JSON.parse(localStorage.getItem('nimfresh-bills')) || [];
+                } catch (e) {
+                    bills = [];
+                }
+
+                // Show latest 5 bills
+                scansList.innerHTML = '';
+                bills.slice(0, 5).forEach(bill => {
+                    const scanItem = document.createElement('div');
+                    scanItem.className = 'scan-item';
+                    scanItem.style.cursor = 'pointer';
+                    scanItem.innerHTML = `
+                        <div class="scan-icon">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <div class="scan-details">
+                            <h3>${bill.fileName}</h3>
+                            <p>${bill.uploadDate} • ${bill.itemsDetected} items detected</p>
+                        </div>
+                        <div class="scan-status status-success">${bill.status}</div>
+                    `;
+                    // Add click listener to show bill details
+                    scanItem.addEventListener('click', () => showBillDetails(bill));
+                    scansList.appendChild(scanItem);
+                });
+
+                // Show message if no bills
+                if (bills.length === 0) {
+                    scansList.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No bills scanned yet. Upload a bill to get started!</p>';
+                }
+            }
+
+            // Show bill details modal
+            function showBillDetails(bill) {
+                const modal = document.getElementById('billDetailsModal');
+                if (!modal) return;
+
+                // Populate bill details
+                document.getElementById('billFileName').textContent = bill.fileName;
+                document.getElementById('billUploadDate').textContent = bill.uploadDate;
+                document.getElementById('billFileSize').textContent = bill.fileSize + ' KB';
+                document.getElementById('billItemCount').textContent = bill.itemsDetected;
+                document.getElementById('billStatus').textContent = bill.status;
+
+                // Populate items list
+                const itemsList = document.getElementById('billItemsList');
+                itemsList.innerHTML = '';
+
+                if (bill.items && bill.items.length > 0) {
+                    bill.items.forEach(item => {
+                        const itemRow = document.createElement('div');
+                        itemRow.className = 'item-row';
+                        itemRow.innerHTML = `
+                            <div class="item-row-icon">
+                                <i class="${item.icon || 'fas fa-cube'}"></i>
+                            </div>
+                            <div class="item-row-info">
+                                <div class="item-row-name">${item.name}</div>
+                                <div class="item-row-meta">${item.category} • ${item.quantity}</div>
+                            </div>
+                            <div class="item-row-status">${(item.status || 'fresh').charAt(0).toUpperCase() + (item.status || 'fresh').slice(1)}</div>
+                        `;
+                        itemsList.appendChild(itemRow);
+                    });
+                } else {
+                    itemsList.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No items detected in this bill</p>';
+                }
+
+                // Store current bill for "Add All" action
+                modal.dataset.currentBill = JSON.stringify(bill);
+
+                // Show modal
+                modal.classList.add('active');
+            }
+
+            // Close bill details modal
+            const billDetailsModal = document.getElementById('billDetailsModal');
+            const billDetailsClose = document.getElementById('billDetailsClose');
+            const billCloseBtnFooter = document.getElementById('billCloseBtnFooter');
+
+            if (billDetailsClose) {
+                billDetailsClose.addEventListener('click', () => {
+                    billDetailsModal.classList.remove('active');
+                });
+            }
+
+            if (billCloseBtnFooter) {
+                billCloseBtnFooter.addEventListener('click', () => {
+                    billDetailsModal.classList.remove('active');
+                });
+            }
+
+            // Close modal when clicking outside
+            if (billDetailsModal) {
+                billDetailsModal.addEventListener('click', function (e) {
+                    if (e.target === billDetailsModal) {
+                        billDetailsModal.classList.remove('active');
+                    }
+                });
+            }
+
+            // Add all items from bill to stock
+            const billAddAllBtn = document.getElementById('billAddAllBtn');
+            if (billAddAllBtn) {
+                billAddAllBtn.addEventListener('click', function () {
+                    try {
+                        const bill = JSON.parse(billDetailsModal.dataset.currentBill);
+                        if (bill.items && bill.items.length > 0) {
+                            // Load existing stock
+                            let existing = [];
+                            try {
+                                existing = JSON.parse(localStorage.getItem('nimfresh-stock')) || [];
+                            } catch (e) {
+                                existing = [];
+                            }
+
+                            // Add bill items to stock
+                            const updated = existing.concat(bill.items);
+                            localStorage.setItem('nimfresh-stock', JSON.stringify(updated));
+
+                            showNotification(`✓ Added ${bill.items.length} items from "${bill.fileName}" to inventory`, 'success');
+                            billDetailsModal.classList.remove('active');
+                        }
+                    } catch (e) {
+                        console.error('Error adding items to stock', e);
+                        showNotification('Failed to add items to stock', 'error');
+                    }
+                });
+            }
+
+            // Load recent scans on page load
+            updateRecentScans();
+
+            // Add animation styles
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideInRight {
+                    from { 
+                        transform: translateX(100%); 
+                        opacity: 0; 
+                    }
+                    to { 
+                        transform: translateX(0); 
+                        opacity: 1; 
+                    }
+                }
+                
+                @keyframes slideOutRight {
+                    from { 
+                        transform: translateX(0); 
+                        opacity: 1; 
+                    }
+                    to { 
+                        transform: translateX(100%); 
+                        opacity: 0; 
+                    }
+                }
+
+                @keyframes scanPulse {
+                    0%, 100% { 
+                        opacity: 0.7;
+                        border-color: var(--primary);
+                    }
+                    50% { 
+                        opacity: 1;
+                        border-color: var(--dark);
+                        box-shadow: 0 0 20px rgba(46, 125, 50, 0.6);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
         });
     </script>
 </body>
