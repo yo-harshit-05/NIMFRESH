@@ -119,22 +119,42 @@
                 <div class="sensor-card">
                     <div class="sensor-header">
                         <i class="fas fa-wind"></i>
-                        <h3>Air Quality</h3>
+                        <h3>Gas Levels</h3>
                     </div>
-                    <div class="sensor-value" id="live-air-quality">Good</div>
-                    <div class="gas-levels">
+                    <div class="gas-levels" id="gas-levels">
+                        <div class="gas-item">
+                            <span>H₂S</span>
+                            <span class="gas-value" id="gas-h2s">— ppm</span>
+                        </div>
                         <div class="gas-item">
                             <span>CO₂</span>
-                            <span class="gas-value optimal">450ppm</span>
+                            <span class="gas-value" id="gas-co2">— ppm</span>
                         </div>
                         <div class="gas-item">
-                            <span>Ethylene</span>
-                            <span class="gas-value optimal">Low</span>
+                            <span>NH₃</span>
+                            <span class="gas-value" id="gas-nh3">— ppm</span>
+                        </div>
+                        <div class="gas-item">
+                            <span>CH₄</span>
+                            <span class="gas-value" id="gas-ch4">— ppm</span>
                         </div>
                     </div>
-                    <div class="sensor-status optimal">
-                        <i class="fas fa-check-circle"></i>
-                        Air quality excellent
+                    <div class="sensor-status alert" id="gas-status">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span id="gas-status-text">Monitoring gas levels...</span>
+                        <a href="#" class="view-more-link" id="view-more-link" style="display: none;">
+                            View more
+                        </a>
+                    </div>
+                    <div class="suspected-items" id="suspected-items" style="display: none;">
+                        <div class="suspected-header">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>Suspected Items</span>
+                            <a href="#" class="view-less-link" id="view-less-link">
+                                <i class="fas fa-chevron-up"></i> View less
+                            </a>
+                        </div>
+                        <div class="suspected-list" id="suspected-list"></div>
                     </div>
                 </div>
             </div>

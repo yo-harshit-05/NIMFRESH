@@ -316,6 +316,7 @@ body {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 15px;
+    align-items: start;
 }
 
 .sensor-card {
@@ -327,7 +328,9 @@ body {
     min-height: 200px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
+    align-self: start;
+    position: relative;
 }
 
 .sensor-card:hover {
@@ -397,10 +400,99 @@ body {
     gap: 6px;
     font-size: 0.85rem;
     font-weight: 500;
+    width: 100%;
+    justify-content: space-between;
 }
 
 .sensor-status.optimal {
     color: var(--fresh);
+}
+
+.sensor-status.alert {
+    color: #e74c3c;
+}
+
+.sensor-status > span {
+    flex: 1;
+}
+
+.view-more-link,
+.view-less-link {
+    color: #e74c3c;
+    text-decoration: underline;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+}
+
+.view-more-link:hover,
+.view-less-link:hover {
+    opacity: 0.8;
+}
+
+/* Suspected Items Section */
+.suspected-items {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 20px;
+    right: 20px;
+    padding: 12px;
+    background: #fff5f5;
+    border-left: 3px solid #e74c3c;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    box-sizing: border-box;
+}
+
+.suspected-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #e74c3c;
+    margin-bottom: 10px;
+}
+
+.suspected-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-height: 150px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.suspected-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.suspected-list::-webkit-scrollbar-track {
+    background: #ffe0e0;
+    border-radius: 3px;
+}
+
+.suspected-list::-webkit-scrollbar-thumb {
+    background: #e74c3c;
+    border-radius: 3px;
+}
+
+.suspected-list::-webkit-scrollbar-thumb:hover {
+    background: #c0392b;
+}
+
+.suspected-item {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #ffe0e0;
+    color: #c0392b;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
 }
 
 /* Trend Indicators */
@@ -934,4 +1026,16 @@ body {
         padding: 4px 8px;
         font-size: 0.7rem;
     }
+}
+.gas-alert {
+    color: #e53935;          /* red text */
+    font-size: 0.8rem;       /* small text */
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.gas-alert i {
+    font-size: 0.9rem;       /* small warning icon */
 }
