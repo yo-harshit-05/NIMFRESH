@@ -133,13 +133,13 @@
                     <i class="fas fa-minus-circle"></i>
                     <span>Remove Item</span>
                 </a>
-                <a href="#" class="action-card donate" id="update-stock-btn">
-                    <i class="fas fa-edit"></i>
-                    <span>Update Stock</span>
-                </a>
                 <a href="#" class="action-card profile" id="stock-report-btn">
                     <i class="fas fa-chart-bar"></i>
                     <span>Stock Report</span>
+                </a>
+                <a href="#" class="action-card cart" id="my-cart-btn">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>My Cart</span>
                 </a>
             </div>
         </section>
@@ -337,6 +337,39 @@
             </div>
         </div>
 
+        <div id="cartModal" class="modal" aria-hidden="true">
+            <div class="modal-card" style="max-width: 700px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px">
+                    <div>
+                        <h3 style="margin:0">My Cart</h3>
+                        <div style="color:#666;font-size:0.9rem;margin-top:6px">Items that need to be purchased</div>
+                    </div>
+                    <div style="text-align:right">
+                        <div style="font-size:0.9rem;color:#444">Items: <span id="cartItemCount">0</span></div>
+                    </div>
+                </div>
+
+                <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+                    <input id="cartSearch" placeholder="Search or add item to cart..." style="flex:1;padding:8px;border-radius:8px;border:1px solid #ddd">
+                    <button class="btn btn-primary" id="cartAddItem" style="white-space:nowrap">Add Item</button>
+                </div>
+
+                <div id="cartSuggestions" style="margin-top:12px;padding:12px;background:#f6fff6;border-radius:8px;border:1px solid #e0e0e0;display:none">
+                    <div style="font-weight:600;margin-bottom:8px;color:#2e7d32">
+                        <i class="fas fa-lightbulb"></i> Suggested Items (Running Low):
+                    </div>
+                    <div id="cartSuggestedItems" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+                </div>
+
+                <div id="cartItemList" style="max-height:400px;overflow-y:auto;margin-top:12px;padding-right:6px"></div>
+
+                <div style="margin-top:12px;text-align:right;display:flex;gap:8px;justify-content:flex-end;align-items:center;border-top:1px solid #e0e0e0;padding-top:12px">
+                    <button class="btn btn-secondary" id="cartClear">Clear Cart</button>
+                    <button class="btn btn-secondary" id="cartClose">Close</button>
+                </div>
+            </div>
+        </div>
+
         <style>
             /* Modal basics used by quick actions */
             .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:2500; align-items:center; justify-content:center; padding:16px; }
@@ -505,24 +538,43 @@
                 }
             });
 
+            // Helper function to convert YYYY-MM-DD to DD-MM-YYYY
+            function formatDateToDDMMYYYY(dateString) {
+                if (!dateString) return '';
+                if (typeof dateString === 'string' && dateString.includes('-')) {
+                    const parts = dateString.split('-');
+                    if (parts.length === 3 && parts[0].length === 4) {
+                        // YYYY-MM-DD format - convert to DD-MM-YYYY
+                        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                    }
+                }
+                return dateString;
+            }
+
             // Save item functionality (persist to localStorage and re-render table)
             saveBtn.addEventListener('click', function() {
                 if (form.checkValidity()) {
+                    // Convert YYYY-MM-DD (from HTML date input) to DD-MM-YYYY for storage
+                    const purchaseDateInput = document.getElementById('purchaseDate').value;
+                    const expiryDateInput = document.getElementById('expiryDate').value;
+                    
                     const itemData = {
                         id: Date.now(),
                         name: document.getElementById('itemName').value,
                         category: document.getElementById('itemCategory').value,
                         quantity: document.getElementById('itemQuantity').value,
                         icon: document.getElementById('itemIcon').value,
-                        purchaseDate: document.getElementById('purchaseDate').value,
-                        expiryDate: document.getElementById('expiryDate').value,
+                        purchaseDate: formatDateToDDMMYYYY(purchaseDateInput),
+                        expiryDate: formatDateToDDMMYYYY(expiryDateInput),
                         notes: document.getElementById('itemNotes').value
                     };
 
-                    // Derive a simple status based on expiry date
+                    // Derive a simple status based on expiry date (parse DD-MM-YYYY for calculation)
                     try {
                         const now = new Date();
-                        const exp = new Date(itemData.expiryDate);
+                        // Convert DD-MM-YYYY to Date object for calculation
+                        const expParts = itemData.expiryDate.split('-');
+                        const exp = new Date(`${expParts[2]}-${expParts[1]}-${expParts[0]}`);
                         const diffDays = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
                         if (isNaN(diffDays)) {
                             itemData.status = 'fresh';

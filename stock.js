@@ -14,6 +14,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update stock counts
     updateStockCounts();
+    
+    // Update cart count on page load
+    updateCartCount();
 
     // Filter functionality
     const filterButtons = document.querySelectorAll('.filter-btn');
@@ -117,14 +120,14 @@ document.addEventListener('DOMContentLoaded', function() {
         openRemoveModal();
     });
 
-    document.getElementById('update-stock-btn').addEventListener('click', function(e) {
-        e.preventDefault();
-        openUpdateModal();
-    });
-
     document.getElementById('stock-report-btn').addEventListener('click', function(e) {
         e.preventDefault();
         openReportModal();
+    });
+
+    document.getElementById('my-cart-btn').addEventListener('click', function(e) {
+        e.preventDefault();
+        openCartModal();
     });
 
     // Table action buttons
@@ -176,6 +179,40 @@ function saveStock(items) {
     }
 }
 
+// Utility function to format date to DD-MM-YYYY format
+function formatDateToDDMMYYYY(dateString) {
+    if (!dateString) return '';
+    
+    try {
+        // If already in DD-MM-YYYY format, return as-is
+        if (typeof dateString === 'string' && dateString.includes('-')) {
+            const parts = dateString.split('-');
+            if (parts.length === 3 && parts[0].length === 2 && parts[2].length === 4) {
+                // Already in DD-MM-YYYY format
+                return dateString;
+            }
+            
+            // If in YYYY-MM-DD format, convert to DD-MM-YYYY
+            if (parts.length === 3 && parts[0].length === 4) {
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+        }
+        
+        // Try to parse as Date object and format
+        const date = new Date(dateString);
+        if (!isNaN(date.getTime())) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}-${month}-${year}`;
+        }
+    } catch (e) {
+        console.error('Error formatting date:', e);
+    }
+    
+    return dateString; // Return original if conversion fails
+}
+
 // Render a stock table from an array of items
 function renderStockTable(items) {
     const tbody = document.getElementById('stock-table-body');
@@ -198,8 +235,8 @@ function renderStockTable(items) {
             </td>
             <td>${item.category || ''}</td>
             <td>${item.quantity || ''}</td>
-            <td>${item.purchaseDate || ''}</td>
-            <td>${item.expiryDate || ''}</td>
+            <td>${formatDateToDDMMYYYY(item.purchaseDate || '')}</td>
+            <td>${formatDateToDDMMYYYY(item.expiryDate || '')}</td>
             <td><span class="status-badge ${item.status || 'fresh'}">${(item.status || 'Fresh').charAt(0).toUpperCase() + (item.status || 'Fresh').slice(1)}</span></td>
             <td>
                 <button class="action-btn edit-btn"><i class="fas fa-edit"></i></button>
@@ -236,6 +273,14 @@ function renderStockTable(items) {
     });
 
     updateStockCounts();
+    
+    // Update cart suggestions if cart modal is open
+    if (typeof renderCartSuggestions === 'function') {
+        const cartModal = document.getElementById('cartModal');
+        if (cartModal && cartModal.getAttribute('aria-hidden') === 'false') {
+            renderCartSuggestions();
+        }
+    }
 }
 
 // Function to update stock counts
@@ -277,6 +322,14 @@ function filterStockItems(filter) {
     });
     
     updateStockCounts();
+    
+    // Update cart suggestions if cart modal is open
+    if (typeof renderCartSuggestions === 'function') {
+        const cartModal = document.getElementById('cartModal');
+        if (cartModal && cartModal.getAttribute('aria-hidden') === 'false') {
+            renderCartSuggestions();
+        }
+    }
 }
 
 /* Quick Action Modal Logic */
@@ -408,8 +461,32 @@ function openUpdateModal(prefillId){
             nameIn.value=''; catIn.value=''; qtyIn.value=''; purchaseIn.value=''; expiryIn.value='';
         } else {
             const it = items.find(x=>String(x.id)===String(v));
-            if (it){ nameIn.value=it.name||''; catIn.value=it.category||''; qtyIn.value=it.quantity||''; purchaseIn.value=it.purchaseDate||''; expiryIn.value=it.expiryDate||''; }
+            if (it){ 
+                nameIn.value=it.name||''; 
+                catIn.value=it.category||''; 
+                qtyIn.value=it.quantity||''; 
+                // Convert DD-MM-YYYY to YYYY-MM-DD for date input (which requires ISO format)
+                purchaseIn.value=convertDDMMYYYYToYYYYMMDD(it.purchaseDate||''); 
+                expiryIn.value=convertDDMMYYYYToYYYYMMDD(it.expiryDate||''); 
+            }
         }
+    }
+    
+    // Helper to convert DD-MM-YYYY to YYYY-MM-DD for HTML date inputs
+    function convertDDMMYYYYToYYYYMMDD(dateString) {
+        if (!dateString) return '';
+        if (typeof dateString === 'string' && dateString.includes('-')) {
+            const parts = dateString.split('-');
+            if (parts.length === 3 && parts[0].length === 2 && parts[2].length === 4) {
+                // DD-MM-YYYY format - convert to YYYY-MM-DD
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+            // Already in YYYY-MM-DD format
+            if (parts.length === 3 && parts[0].length === 4) {
+                return dateString;
+            }
+        }
+        return dateString;
     }
 
     select.addEventListener('change', fillFromSelected);
@@ -429,8 +506,9 @@ document.getElementById('updateSave').addEventListener('click', function(){
         const name = document.getElementById('updateName').value.trim();
         const category = document.getElementById('updateCategory').value.trim();
         const quantity = document.getElementById('updateQuantity').value.trim();
-        const purchaseDate = document.getElementById('updatePurchase').value || '';
-        const expiryDate = document.getElementById('updateExpiry').value || '';
+        // Convert YYYY-MM-DD (from HTML date input) to DD-MM-YYYY for storage
+        const purchaseDate = formatDateToDDMMYYYY(document.getElementById('updatePurchase').value || '');
+        const expiryDate = formatDateToDDMMYYYY(document.getElementById('updateExpiry').value || '');
 
         if (!name){ alert('Please provide an item name.'); return; }
 
@@ -463,7 +541,28 @@ function computeStatus(expiryDate){
     if (!expiryDate) return 'fresh';
     try{
         const now = new Date();
-        const exp = new Date(expiryDate);
+        let exp;
+        
+        // Handle DD-MM-YYYY format (our storage format)
+        if (typeof expiryDate === 'string' && expiryDate.includes('-')) {
+            const parts = expiryDate.split('-');
+            if (parts.length === 3 && parts[0].length === 2 && parts[2].length === 4) {
+                // DD-MM-YYYY format - convert to YYYY-MM-DD for Date parsing
+                exp = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+            } else if (parts.length === 3 && parts[0].length === 4) {
+                // YYYY-MM-DD format
+                exp = new Date(expiryDate);
+            } else {
+                exp = new Date(expiryDate);
+            }
+        } else {
+            exp = new Date(expiryDate);
+        }
+        
+        if (isNaN(exp.getTime())) {
+            return 'fresh';
+        }
+        
         const diffDays = Math.ceil((exp - now)/(1000*60*60*24));
         if (diffDays < 0) return 'danger';
         if (diffDays <= 3) return 'warning';
@@ -507,9 +606,211 @@ document.getElementById('reportDownload').addEventListener('click', function(){
     a.href = url; a.download = 'nimfresh-stock-report.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 });
 
+// Cart functionality
+function loadCart() {
+    try {
+        const cart = localStorage.getItem('nimfresh-cart');
+        return cart ? JSON.parse(cart) : [];
+    } catch (e) {
+        console.error('Failed to load cart', e);
+        return [];
+    }
+}
+
+function saveCart(cart) {
+    try {
+        localStorage.setItem('nimfresh-cart', JSON.stringify(cart));
+    } catch (e) {
+        console.error('Failed to save cart', e);
+    }
+}
+
+function openCartModal() {
+    const modal = document.getElementById('cartModal');
+    if (!modal) return;
+    
+    modal.setAttribute('aria-hidden', 'false');
+    renderCartItems();
+    renderCartSuggestions();
+    updateCartCount();
+}
+
+function closeCartModal() {
+    const modal = document.getElementById('cartModal');
+    if (modal) {
+        modal.setAttribute('aria-hidden', 'true');
+    }
+}
+
+function renderCartSuggestions() {
+    const suggestionsDiv = document.getElementById('cartSuggestions');
+    const suggestedItemsDiv = document.getElementById('cartSuggestedItems');
+    if (!suggestionsDiv || !suggestedItemsDiv) return;
+    
+    const items = loadStock() || [];
+    const cart = loadCart();
+    const cartItemNames = new Set(cart.map(item => item.name.toLowerCase()));
+    
+    // Find items that are expiring soon or expired (warning/danger status)
+    const exhaustingItems = items.filter(item => {
+        const status = item.status || computeStatus(item.expiryDate);
+        return (status === 'warning' || status === 'danger') && 
+               !cartItemNames.has((item.name || '').toLowerCase());
+    });
+    
+    if (exhaustingItems.length === 0) {
+        suggestionsDiv.style.display = 'none';
+        return;
+    }
+    
+    suggestionsDiv.style.display = 'block';
+    suggestedItemsDiv.innerHTML = '';
+    
+    exhaustingItems.slice(0, 6).forEach(item => {
+        const tag = document.createElement('div');
+        tag.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:white;border:1px solid #2e7d32;border-radius:20px;cursor:pointer;font-size:0.85rem;color:#2e7d32;font-weight:500;';
+        tag.innerHTML = `<span>${item.name}</span> <i class="fas fa-plus" style="font-size:0.75rem;"></i>`;
+        tag.addEventListener('click', () => addItemToCart(item.name));
+        suggestedItemsDiv.appendChild(tag);
+    });
+}
+
+function renderCartItems() {
+    const cartList = document.getElementById('cartItemList');
+    if (!cartList) return;
+    
+    const cart = loadCart();
+    
+    if (cart.length === 0) {
+        cartList.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#999;"><i class="fas fa-shopping-cart" style="font-size:3rem;opacity:0.3;margin-bottom:15px;"></i><p>Your cart is empty</p><p style="font-size:0.9rem;margin-top:8px;">Add items that you need to purchase</p></div>';
+        return;
+    }
+    
+    cartList.innerHTML = '';
+    cart.forEach((item, index) => {
+        const itemDiv = document.createElement('div');
+        itemDiv.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:#f9f9f9;border-radius:8px;margin-bottom:8px;border:1px solid #e0e0e0;';
+        itemDiv.innerHTML = `
+            <div style="flex:1">
+                <div style="font-weight:600;color:#333;">${item.name || 'Unnamed Item'}</div>
+                ${item.notes ? `<div style="font-size:0.85rem;color:#666;margin-top:4px;">${item.notes}</div>` : ''}
+            </div>
+            <button class="btn btn-secondary" style="padding:6px 10px;min-width:auto;" data-index="${index}">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
+        
+        const deleteBtn = itemDiv.querySelector('button');
+        deleteBtn.addEventListener('click', () => removeFromCart(index));
+        
+        cartList.appendChild(itemDiv);
+    });
+    
+    updateCartCount();
+}
+
+function addItemToCart(itemName, notes = '') {
+    if (!itemName || !itemName.trim()) return;
+    
+    const cart = loadCart();
+    const trimmedName = itemName.trim();
+    
+    // Check if item already exists
+    if (cart.some(item => item.name.toLowerCase() === trimmedName.toLowerCase())) {
+        showToast('Item already in cart', 'info');
+        return;
+    }
+    
+    cart.push({
+        id: Date.now(),
+        name: trimmedName,
+        notes: notes || '',
+        addedDate: formatDateToDDMMYYYY(new Date().toISOString())
+    });
+    
+    saveCart(cart);
+    renderCartItems();
+    renderCartSuggestions();
+    updateCartCount();
+    showToast(`"${trimmedName}" added to cart`, 'success');
+}
+
+function removeFromCart(index) {
+    const cart = loadCart();
+    if (index >= 0 && index < cart.length) {
+        const itemName = cart[index].name;
+        cart.splice(index, 1);
+        saveCart(cart);
+        renderCartItems();
+        renderCartSuggestions();
+        updateCartCount();
+        showToast(`"${itemName}" removed from cart`, 'info');
+    }
+}
+
+function clearCart() {
+    if (confirm('Are you sure you want to clear your cart?')) {
+        saveCart([]);
+        renderCartItems();
+        renderCartSuggestions();
+        updateCartCount();
+        showToast('Cart cleared', 'info');
+    }
+}
+
+function updateCartCount() {
+    const cart = loadCart();
+    const countEl = document.getElementById('cartItemCount');
+    if (countEl) {
+        countEl.textContent = cart.length;
+    }
+    
+    // Update cart button badge if it exists
+    const cartBtn = document.getElementById('my-cart-btn');
+    if (cartBtn) {
+        let badge = cartBtn.querySelector('.cart-badge');
+        if (cart.length > 0) {
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'cart-badge';
+                badge.style.cssText = 'position:absolute;top:-5px;right:-5px;background:#ff6f00;color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;';
+                cartBtn.style.position = 'relative';
+                cartBtn.appendChild(badge);
+            }
+            badge.textContent = cart.length;
+        } else if (badge) {
+            badge.remove();
+        }
+    }
+}
+
+// Cart event listeners
+document.getElementById('cartClose').addEventListener('click', closeCartModal);
+document.getElementById('cartClear').addEventListener('click', clearCart);
+document.getElementById('cartAddItem').addEventListener('click', function() {
+    const input = document.getElementById('cartSearch');
+    const itemName = input.value.trim();
+    if (itemName) {
+        addItemToCart(itemName);
+        input.value = '';
+    } else {
+        showToast('Please enter an item name', 'error');
+    }
+});
+
+document.getElementById('cartSearch').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        const itemName = this.value.trim();
+        if (itemName) {
+            addItemToCart(itemName);
+            this.value = '';
+        }
+    }
+});
+
 // Close modals on outside click
 document.addEventListener('click', function(e){
-    ['removeItemModal','updateStockModal','reportModal'].forEach(id=>{
+    ['removeItemModal','updateStockModal','reportModal','cartModal'].forEach(id=>{
         const el = document.getElementById(id);
         if (el && el.getAttribute('aria-hidden')==='false' && e.target===el) el.setAttribute('aria-hidden','true');
     });

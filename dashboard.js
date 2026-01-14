@@ -132,65 +132,178 @@ function initializeStockWithDefaultItems() {
     }
 }
 
-// Helper function to calculate days remaining from expiry date
-function calculateDaysRemaining(expiryDate) {
-    if (!expiryDate) return 0;
+// Utility function to format date to DD-MM-YYYY format
+function formatDateToDDMMYYYY(dateString) {
+    if (!dateString) return '';
+    
     try {
-        // Handle different date formats
-        let expDate;
-        if (expiryDate.includes('-')) {
-            // Format: YYYY-MM-DD or DD-MM-YYYY
-            const parts = expiryDate.split('-');
-            if (parts[0].length === 4) {
-                // YYYY-MM-DD
-                expDate = new Date(expiryDate);
-            } else {
-                // DD-MM-YYYY
-                expDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+        // If already in DD-MM-YYYY format, return as-is
+        if (typeof dateString === 'string' && dateString.includes('-')) {
+            const parts = dateString.split('-');
+            if (parts.length === 3 && parts[0].length === 2 && parts[2].length === 4) {
+                // Already in DD-MM-YYYY format
+                return dateString;
             }
-        } else {
-            expDate = new Date(expiryDate);
+            
+            // If in YYYY-MM-DD format, convert to DD-MM-YYYY
+            if (parts.length === 3 && parts[0].length === 4) {
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
         }
         
+        // Try to parse as Date object and format
+        const date = new Date(dateString);
+        if (!isNaN(date.getTime())) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}-${month}-${year}`;
+        }
+    } catch (e) {
+        console.error('Error formatting date:', e);
+    }
+    
+    return dateString; // Return original if conversion fails
+}
+
+// Helper function to calculate days remaining from expiry date
+// Use the EXACT same status calculation as stock.js
+// But with better date parsing to handle both DD-MM-YYYY and YYYY-MM-DD formats
+function computeStatus(expiryDate) {
+    if (!expiryDate) return 'fresh';
+    try {
         const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        expDate.setHours(0, 0, 0, 0);
+        let exp;
         
-        const diffTime = expDate - now;
+        // Try to parse the date
+        if (typeof expiryDate === 'string' && expiryDate.includes('-')) {
+            const parts = expiryDate.split('-');
+            if (parts.length === 3) {
+                // Check format: DD-MM-YYYY (2-2-4 digits) or YYYY-MM-DD (4-2-2 digits)
+                if (parts[0].length === 2 && parts[2].length === 4) {
+                    // DD-MM-YYYY format - convert to YYYY-MM-DD
+                    exp = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                } else if (parts[0].length === 4) {
+                    // YYYY-MM-DD format (ISO format from HTML date inputs)
+                    exp = new Date(expiryDate);
+                } else {
+                    // Try default parsing
+                    exp = new Date(expiryDate);
+                }
+            } else {
+                exp = new Date(expiryDate);
+            }
+        } else {
+            exp = new Date(expiryDate);
+        }
+        
+        // If still invalid, return fresh
+        if (isNaN(exp.getTime())) {
+            console.warn('Invalid expiry date in computeStatus:', expiryDate);
+            return 'fresh';
+        }
+        
+        const diffDays = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) return 'danger';
+        if (diffDays <= 3) return 'warning';
+        return 'fresh';
+    } catch (e) {
+        console.error('Error in computeStatus:', e);
+        return 'fresh';
+    }
+}
+
+function calculateDaysRemaining(expiryDate) {
+    if (!expiryDate) return 999; // No expiry date means it's fresh
+    
+    try {
+        const now = new Date();
+        now.setHours(0, 0, 0, 0); // Reset time to start of day
+        
+        let expDate = new Date(expiryDate);
+        
+        // Handle DD-MM-YYYY format (common in the app)
+        if (isNaN(expDate.getTime()) && typeof expiryDate === 'string' && expiryDate.includes('-')) {
+            const parts = expiryDate.split('-');
+            if (parts.length === 3) {
+                if (parts[0].length === 2 && parts[2].length === 4) {
+                    // DD-MM-YYYY format - convert to YYYY-MM-DD
+                    expDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                } else if (parts[0].length === 4) {
+                    // YYYY-MM-DD format
+                    expDate = new Date(expiryDate);
+                }
+            }
+        }
+        
+        expDate.setHours(0, 0, 0, 0); // Reset time to start of day
+        
+        // Validate the date
+        if (isNaN(expDate.getTime())) {
+            console.warn('Invalid expiry date:', expiryDate);
+            return 999; // Invalid date, treat as fresh
+        }
+        
+        // Use Math.ceil to match stock.js calculation
+        const diffTime = expDate.getTime() - now.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
         return diffDays;
     } catch (e) {
-        console.error('Error calculating days remaining', e);
-        return 0;
+        console.error('Error calculating days remaining for:', expiryDate, e);
+        return 999; // Error in calculation, treat as fresh
     }
 }
 
 // Convert stock data format to dashboard format
 function convertStockToDashboard(stockItems) {
+    if (!stockItems || stockItems.length === 0) {
+        return [];
+    }
+    
     return stockItems.map(item => {
-        const daysRemaining = calculateDaysRemaining(item.expiryDate);
-        // Recalculate status based on current days remaining
+        const expiryDate = item.expiryDate || item.expireDate || item.expDate;
+        
+        // ALWAYS recalculate status based on current date
+        // This ensures accurate status regardless of when item was added
+        // Stock.html also recalculates status when rendering
         let status = 'fresh';
-        if (daysRemaining < 0) {
-            status = 'danger';
-        } else if (daysRemaining <= 3) {
-            status = 'warning';
+        if (expiryDate) {
+            status = computeStatus(expiryDate);
         }
+        
+        // Calculate days remaining for display
+        const daysRemaining = calculateDaysRemaining(expiryDate);
+        
+        // Format dates to DD-MM-YYYY format for display
+        let purchaseDateDisplay = formatDateToDDMMYYYY(item.purchaseDate || item.purchasedDate || '');
         
         return {
             id: item.id,
             name: item.name,
             icon: item.icon || 'fas fa-cube',
-            status: status,
-            purchasedDate: item.purchaseDate || item.purchasedDate || '',
-            daysRemaining: daysRemaining
+            status: status, // Use stored status from stock
+            purchasedDate: purchaseDateDisplay,
+            daysRemaining: daysRemaining,
+            expiryDate: expiryDate // Keep for reference
         };
+    }).sort((a, b) => {
+        // Sort by status: danger first, then warning, then fresh
+        // Within same status, sort by days remaining (ascending)
+        const statusOrder = { 'danger': 0, 'warning': 1, 'fresh': 2 };
+        if (statusOrder[a.status] !== statusOrder[b.status]) {
+            return statusOrder[a.status] - statusOrder[b.status];
+        }
+        return a.daysRemaining - b.daysRemaining;
     });
 }
 
 // Function to load and render food items from stock
 function loadAndRenderFoodItems() {
     const stockItems = loadStockData();
+    
+    // Always recalculate status based on current date and expiry date
+    // This ensures dashboard shows accurate status matching stock.html calculations
     const foodItems = convertStockToDashboard(stockItems);
     renderFoodItems(foodItems);
     updateItemCounts();
@@ -254,6 +367,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Simulate real-time food updates
     setInterval(simulateFoodUpdates, 30000);
+    
+    // Prevent background scroll when scrolling suspected items list
+    const suspectedList = document.getElementById('suspected-list');
+    if (suspectedList) {
+        suspectedList.addEventListener('wheel', function(e) {
+            // Check if we're at scroll limits
+            const isAtTop = this.scrollTop === 0;
+            const isAtBottom = this.scrollTop + this.clientHeight >= this.scrollHeight - 1;
+            
+            // If at limits and trying to scroll further, prevent default
+            if ((e.deltaY < 0 && isAtTop) || (e.deltaY > 0 && isAtBottom)) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, { passive: false });
+    }
 });
 
 // Function to update gas readings
@@ -402,18 +531,48 @@ function updateGasReadings(readings) {
 // Function to render food items WITH logo, highlighted status, purchased date, and days remaining
 function renderFoodItems(items) {
     const container = document.getElementById('food-items-container');
+    if (!container) return;
+    
     container.innerHTML = '';
+
+    // Show message if no items
+    if (!items || items.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px 20px; color: #666;">
+                <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.3;"></i>
+                <p style="font-size: 1.1rem; margin: 0;">No food items in stock yet.</p>
+                <p style="font-size: 0.9rem; margin-top: 8px;">Add items from the Stock page or scan a bill to get started.</p>
+            </div>
+        `;
+        return;
+    }
 
     items.forEach(item => {
         const foodItem = document.createElement('div');
         foodItem.className = `food-item ${item.status}`;
         foodItem.setAttribute('data-category', item.status);
 
-        // Determine status text
+        // Determine status text to match stock.html labels
+        // Stock.html shows: Fresh, Warning (Expiring Soon), or Danger (Expired)
         let statusText = '';
-        if (item.status === 'fresh') statusText = `Fresh • ${item.daysRemaining} days remaining`;
-        else if (item.status === 'warning') statusText = `Use Soon • ${item.daysRemaining} days remaining`;
-        else statusText = `Discard • Expired`;
+        const statusLower = (item.status || 'fresh').toLowerCase();
+        
+        if (statusLower === 'fresh') {
+            statusText = `Fresh • ${item.daysRemaining} days remaining`;
+        } else if (statusLower === 'warning') {
+            if (item.daysRemaining === 0) {
+                statusText = `Expiring Soon • Expiring Today`;
+            } else {
+                statusText = `Expiring Soon • ${item.daysRemaining} day${item.daysRemaining !== 1 ? 's' : ''} remaining`;
+            }
+        } else if (statusLower === 'danger') {
+            // Expired
+            const daysOverdue = Math.abs(item.daysRemaining);
+            statusText = `Expired • ${daysOverdue} day${daysOverdue !== 1 ? 's' : ''} ago`;
+        } else {
+            // Default fallback
+            statusText = `Fresh • ${item.daysRemaining} days remaining`;
+        }
 
         foodItem.innerHTML = `
             <div class="item-image">

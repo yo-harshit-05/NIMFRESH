@@ -445,6 +445,7 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 100;
     box-sizing: border-box;
+    overscroll-behavior: contain;
 }
 
 .suspected-header {
@@ -465,6 +466,8 @@ body {
     max-height: 150px;
     overflow-y: auto;
     padding-right: 5px;
+    overscroll-behavior: contain;
+    overscroll-behavior-y: contain;
 }
 
 .suspected-list::-webkit-scrollbar {
@@ -603,6 +606,7 @@ body {
 .action-card.stock i { color: #9c27b0; }
 .action-card.donate i { color: var(--secondary); }
 .action-card.profile i { color: var(--primary); }
+.action-card.cart i { color: #ff6f00; }
 
 .action-card span {
     font-weight: 600;

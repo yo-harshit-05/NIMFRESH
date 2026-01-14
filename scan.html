@@ -1627,11 +1627,24 @@
                 setTimeout(() => {
                     showNotification('Bill captured! Processing...', 'success');
 
+                    // Helper to convert YYYY-MM-DD to DD-MM-YYYY
+                    function formatDateToDDMMYYYY(dateString) {
+                        if (!dateString) return '';
+                        if (typeof dateString === 'string' && dateString.includes('-')) {
+                            const parts = dateString.split('-');
+                            if (parts.length === 3 && parts[0].length === 4) {
+                                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                            }
+                        }
+                        return dateString;
+                    }
+                    
                     // Example detected items (in a real app OCR would provide these)
+                    const todayISO = new Date().toISOString().split('T')[0];
                     const detectedItems = [
-                        { id: Date.now() + 1, name: 'Fresh Apples', icon: 'fas fa-apple-alt', category: 'Fruits', quantity: '1kg', purchaseDate: new Date().toISOString().split('T')[0], expiryDate: '2025-10-15', status: 'fresh' },
-                        { id: Date.now() + 2, name: 'Organic Carrots', icon: 'fas fa-carrot', category: 'Vegetables', quantity: '500g', purchaseDate: new Date().toISOString().split('T')[0], expiryDate: '2025-10-20', status: 'fresh' },
-                        { id: Date.now() + 3, name: 'Whole Milk', icon: 'fas fa-wine-bottle', category: 'Dairy', quantity: '1L', purchaseDate: new Date().toISOString().split('T')[0], expiryDate: '2025-10-12', status: 'warning' }
+                        { id: Date.now() + 1, name: 'Fresh Apples', icon: 'fas fa-apple-alt', category: 'Fruits', quantity: '1kg', purchaseDate: formatDateToDDMMYYYY(todayISO), expiryDate: formatDateToDDMMYYYY('2025-10-15'), status: 'fresh' },
+                        { id: Date.now() + 2, name: 'Organic Carrots', icon: 'fas fa-carrot', category: 'Vegetables', quantity: '500g', purchaseDate: formatDateToDDMMYYYY(todayISO), expiryDate: formatDateToDDMMYYYY('2025-10-20'), status: 'fresh' },
+                        { id: Date.now() + 3, name: 'Whole Milk', icon: 'fas fa-wine-bottle', category: 'Dairy', quantity: '1L', purchaseDate: formatDateToDDMMYYYY(todayISO), expiryDate: formatDateToDDMMYYYY('2025-10-12'), status: 'warning' }
                     ];
 
                     // Load existing stock from localStorage
@@ -1696,11 +1709,24 @@
                     
                     // Simulate bill processing and save bill data
                     setTimeout(() => {
+                        // Helper to convert YYYY-MM-DD to DD-MM-YYYY
+                        function formatDateToDDMMYYYY(dateString) {
+                            if (!dateString) return '';
+                            if (typeof dateString === 'string' && dateString.includes('-')) {
+                                const parts = dateString.split('-');
+                                if (parts.length === 3 && parts[0].length === 4) {
+                                    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                                }
+                            }
+                            return dateString;
+                        }
+                        
                         // Simulate detected items from bill OCR
+                        const todayISO = new Date().toISOString().split('T')[0];
                         const detectedItems = [
-                            { id: Date.now() + 1, name: 'Fresh Apples', icon: 'fas fa-apple-alt', category: 'Fruits', quantity: '1kg', purchaseDate: new Date().toISOString().split('T')[0], expiryDate: '2025-10-15', status: 'fresh' },
-                            { id: Date.now() + 2, name: 'Organic Carrots', icon: 'fas fa-carrot', category: 'Vegetables', quantity: '500g', purchaseDate: new Date().toISOString().split('T')[0], expiryDate: '2025-10-20', status: 'fresh' },
-                            { id: Date.now() + 3, name: 'Whole Milk', icon: 'fas fa-wine-bottle', category: 'Dairy', quantity: '1L', purchaseDate: new Date().toISOString().split('T')[0], expiryDate: '2025-10-12', status: 'warning' }
+                            { id: Date.now() + 1, name: 'Fresh Apples', icon: 'fas fa-apple-alt', category: 'Fruits', quantity: '1kg', purchaseDate: formatDateToDDMMYYYY(todayISO), expiryDate: formatDateToDDMMYYYY('2025-10-15'), status: 'fresh' },
+                            { id: Date.now() + 2, name: 'Organic Carrots', icon: 'fas fa-carrot', category: 'Vegetables', quantity: '500g', purchaseDate: formatDateToDDMMYYYY(todayISO), expiryDate: formatDateToDDMMYYYY('2025-10-20'), status: 'fresh' },
+                            { id: Date.now() + 3, name: 'Whole Milk', icon: 'fas fa-wine-bottle', category: 'Dairy', quantity: '1L', purchaseDate: formatDateToDDMMYYYY(todayISO), expiryDate: formatDateToDDMMYYYY('2025-10-12'), status: 'warning' }
                         ];
 
                         // Save bill data with items
